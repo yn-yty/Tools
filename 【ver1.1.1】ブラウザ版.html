@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8"> <!-- 文字エンコーディングをUTF-8に設定 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- ビューポートの設定 -->
+    <title>辞書検索ページ</title> <!-- ページのタイトル -->
+    <style>
+        body {
+            font-family: Arial, sans-serif; /* フォントファミリーを設定 */
+            background-color: #f5f5f5; /* 背景色を設定 */
+            color: #333; /* 文字色を設定 */
+            display: flex; /* フレックスボックスレイアウトを使用 */
+            align-items: center; /* 垂直方向の中央揃え */
+            justify-content: center; /* 水平方向の中央揃え */
+            padding: 20px; /* パディングを設定 */
+            min-height: 100vh; /* 最小高さを100ビュー高さに設定 */
+        }
+
+        .container {
+            width: 90%; /* 幅を90%に設定 */
+            max-width: 1200px; /* 最大幅を1200pxに設定 */
+            display: flex; /* フレックスボックスレイアウトを使用 */
+            flex-direction: column; /* フレックス方向を縦に設定 */
+            gap: 10px; /* 要素間のギャップを設定 */
+            align-items: center; /* 垂直方向の中央揃え */
+            height: 100vh; /* 高さを100ビュー高さに設定 */
+        }
+
+        .card {
+            background-color: #ffffff; /* 背景色を白に設定 */
+            padding: 20px; /* パディングを設定 */
+            width: 100%; /* 幅を100%に設定 */
+            border-radius: 8px; /* 角を丸くする */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* ボックスシャドウを設定 */
+            display: flex; /* フレックスボックスレイアウトを使用 */
+            flex-direction: column; /* フレックス方向を縦に設定 */
+            gap: 10px; /* 要素間のギャップを設定 */
+            box-sizing: border-box; /* ボックスサイズをボーダーボックスに設定 */
+            flex: 1; /* フレックスアイテムの成長率を設定 */
+            height: 50vh; /* 高さを50ビュー高さに設定 */
+        }
+
+        h1 {
+            font-size: 20px; /* フォントサイズを設定 */
+            color: #4CAF50; /* 文字色を設定 */
+            text-align: center; /* テキストを中央揃え */
+            margin-top: 0; /* 上マージンを0に設定 */
+        }
+
+        textarea, select {
+            width: 100%; /* 幅を100%に設定 */
+            padding: 10px; /* パディングを設定 */
+            border: 1px solid #ddd; /* ボーダーを設定 */
+            border-radius: 4px; /* 角を丸くする */
+            font-size: 14px; /* フォントサイズを設定 */
+            box-sizing: border-box; /* ボックスサイズをボーダーボックスに設定 */
+            height: calc(100% - 40px); /* 高さを計算して設定 */
+            resize: none; /* リサイズを無効にする */
+            transition: border-color 0.3s; /* ボーダーカラーのトランジションを設定 */
+        }
+
+        textarea:focus, select:focus {
+            border-color: #4CAF50; /* フォーカス時のボーダーカラーを設定 */
+            outline: none; /* アウトラインを無効にする */
+        }
+
+        button {
+            background-color: #4CAF50; /* 背景色を設定 */
+            color: white; /* 文字色を設定 */
+            border: none; /* ボーダーを無効にする */
+            padding: 10px 20px; /* パディングを設定 */
+            border-radius: 4px; /* 角を丸くする */
+            cursor: pointer; /* カーソルをポインターに設定 */
+            transition: background-color 0.3s; /* 背景色のトランジションを設定 */
+            width: fit-content; /* 幅を内容に合わせる */
+            align-self: center; /* 自身を中央揃え */
+        }
+
+        button:hover {
+            background-color: #45a049; /* ホバー時の背景色を設定 */
+        }
+
+        .controls {
+            display: flex; /* フレックスボックスレイアウトを使用 */
+            justify-content: center; /* 水平方向の中央揃え */
+        }
+
+        .flex-container {
+            display: flex; /* フレックスボックスレイアウトを使用 */
+            gap: 5px; /* 要素間のギャップを設定 */
+            height: calc(100% - 40px); /* 高さを計算して設定 */
+        }
+
+        .select-container {
+            flex: 1; /* フレックスアイテムの成長率を設定 */
+            height: 100%; /* 高さを100%に設定 */
+        }
+
+        .result-container {
+            flex: 3; /* フレックスアイテムの成長率を設定 */
+            height: 100%; /* 高さを100%に設定 */
+        }
+
+        @media (min-width: 601px) {
+            .container {
+                flex-direction: row; /* フレックス方向を横に設定 */
+            }
+
+            .card {
+                width: 48%; /* 幅を48%に設定 */
+            }
+        }
+
+        @media (max-width: 600px) {
+            .flex-container {
+                flex-direction: column; /* フレックス方向を縦に設定 */
+                gap: 5px; /* 要素間のギャップを狭く設定 */
+            }
+
+            .select-container {
+                flex: 2; /* フレックスアイテムの成長率を2に設定 */
+            }
+
+            .result-container {
+                flex: 3; /* フレックスアイテムの成長率を3に設定 */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>テキスト入力</h1>
+            <div class="flex-container">
+            <textarea id="textarea" placeholder="ここにテキストを入力" oninput="updateOptions()"></textarea> <!-- テキストエリア、入力時にupdateOptions関数を呼び出す -->
+            </div>
+            <div class="controls">
+                <button onclick="clearAll()">クリア</button> <!-- クリック時にclearAll関数を呼び出すボタン -->
+            </div>
+        </div>
+
+        <div class="card">
+            <h1>候補一覧と結果</h1>
+            <div class="flex-container">
+                <div class="select-container">
+                    <select id="dynamicSelect" size="5" onchange="updateResult()"></select> <!-- セレクトボックス、変更時にupdateResult関数を呼び出す -->
+                </div>
+                <div class="result-container">
+                    <textarea id="result" readonly></textarea> <!-- 読み取り専用のテキストエリア -->
+                </div>
+            </div>
+            <div class="controls">
+                <button onclick="copyResult()">コピー</button> <!-- クリック時にcopyResult関数を呼び出すボタン -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 辞書データを定義
+        const dictionary = {
+            "apple": "Appleは果物の一種で、赤または緑の皮と甘い果肉を持っています。",
+            "banana": "Bananaは果物の一種で、黄色い皮と柔らかい果肉を持っています。",
+            "cherry": "Cherryは小さな果物で、赤くて甘い味が特徴です。",
+            "grape": "Grapeは小さな果物で、紫または緑色の皮を持っています。",
+            "orange": "Orangeは柑橘類の果物で、オレンジ色の皮と酸味のある味が特徴です。"
+        };
+
+        // テキストエリアの入力に基づいてオプションを更新する関数
+        function updateOptions() {
+            const input = document.getElementById("textarea").value; // テキストエリアの値を取得
+            const selectBox = document.getElementById("dynamicSelect"); // セレクトボックスを取得
+            const resultBox = document.getElementById("result"); // 結果表示用のテキストエリアを取得
+
+            selectBox.innerHTML = ""; // セレクトボックスをクリア
+            resultBox.value = ""; // 結果表示用のテキストエリアをクリア
+
+            // 入力に含まれる単語をフィルタリングし、入力内の出現順にソート
+            const wordsInOrder = Object.keys(dictionary)
+                .filter(word => input.includes(word)) // 入力に含まれる単語をフィルタリング
+                .sort((a, b) => input.indexOf(a) - input.indexOf(b)); // 入力内の出現順にソート
+
+            // フィルタリングされた単語をセレクトボックスに追加
+            wordsInOrder.forEach(word => {
+                const option = document.createElement("option"); // オプション要素を作成
+                option.value = word; // オプションの値を設定
+                option.text = word; // オプションのテキストを設定
+                selectBox.appendChild(option); // セレクトボックスにオプションを追加
+            });
+
+            // セレクトボックスにオプションがない場合の処理
+            if (selectBox.options.length === 0) {
+                const option = document.createElement("option"); // オプション要素を作成
+                option.text = "オプションがありません"; // オプションのテキストを設定
+                selectBox.appendChild(option); // セレクトボックスにオプションを追加
+            } else {
+                selectBox.selectedIndex = 0; // 最初のオプションを選択
+                updateResult(); // 結果を更新
+            }
+        }
+
+        // セレクトボックスの選択に基づいて結果を更新する関数
+        function updateResult() {
+            const selectedValue = document.getElementById("dynamicSelect").value; // セレクトボックスの選択された値を取得
+            document.getElementById("result").value = dictionary[selectedValue] || ""; // 結果表示用のテキストエリアに対応する辞書の値を設定
+        }
+
+        // すべての入力と結果をクリアする関数
+        function clearAll() {
+            document.getElementById("textarea").value = ""; // テキストエリアをクリア
+            document.getElementById("dynamicSelect").innerHTML = ""; // セレクトボックスをクリア
+            document.getElementById("result").value = ""; // 結果表示用のテキストエリアをクリア
+        }
+
+        // 結果をクリップボードにコピーする関数
+        function copyResult() {
+            const result = document.getElementById("result").value; // 結果表示用のテキストエリアの値を取得
+            navigator.clipboard.writeText(result) // クリップボードにテキストをコピー
+                .then(() => showCopyMessage()) // コピー成功時にメッセージを表示
+                .catch(err => console.error('コピーに失敗しました:', err)); // コピー失敗時にエラーメッセージを表示
+        }
+
+        // コピー成功時にメッセージを表示する関数
+        function showCopyMessage() {
+            const copyMessage = document.createElement("div"); // メッセージ表示用のdiv要素を作成
+            copyMessage.innerText = "コピーしました！"; // メッセージテキストを設定
+            Object.assign(copyMessage.style, {
+                position: "fixed", // 固定位置に設定
+                bottom: "20px", // 下から20pxの位置に設定
+                right: "20px", // 右から20pxの位置に設定
+                backgroundColor: "#4CAF50", // 背景色を設定
+                color: "#fff", // 文字色を設定
+                padding: "10px", // パディングを設定
+                borderRadius: "5px", // 角を丸くする
+                boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)" // ボックスシャドウを設定
+            });
+            document.body.appendChild(copyMessage); // メッセージをボディに追加
+
+            setTimeout(() => {
+                document.body.removeChild(copyMessage); // 2秒後にメッセージを削除
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
