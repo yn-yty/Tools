@@ -1,1382 +1,529 @@
 <!DOCTYPE html>
+<!-- HTML5の宣言 -->
 <html lang="ja">
+<!-- 日本語のページであることを示す -->
 <head>
     <meta charset="UTF-8">
+    <!-- 文字エンコーディングをUTF-8に設定 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>カンバン方式タスク管理ツール</title>
+    <!-- モバイル端末での表示を最適化 -->
+    <title>辞書チャットボット</title>
+    <!-- ブラウザのタブに表示されるタイトル -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- Googleのマテリアルアイコンを使用するためのリンク -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600&display=swap">
+    <!-- SF Pro Displayフォントを使用するためのリンク -->
     <style>
-        /* 全体のレイアウト */
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: #f5f5f7;
-            color: #333;
+        /* 基本設定 */
+        :root {
+            /* カラーパレット - アプリ全体で使用する色を変数として定義 */
+            --primary-color: #5B86E5; /* メインカラー - ボタンやアクセントに使用 */
+            --primary-light: #F2F5FC; /* 薄いメインカラー - ホバー時の背景などに使用 */
+            --hover-color: #4A75D4; /* ホバー時の色 - ボタンにマウスを乗せた時の色 */
+            --accent-color: #2B4EA3; /* アクセントカラー - 強調したい部分に使用 */
+            --background-color: #FFFFFF; /* 背景色 - 白色 */
+            --neutral-color: #F0F2F5; /* 中立的な色 - メッセージの背景などに使用 */
+            --border-color: #E1E5EB; /* 境界線の色 */
+            --text-color: #333333; /* テキストの色 - 濃いグレー */
+            --error-color: #D32F2F; /* エラー表示用の赤色 */
+            
+            /* レイアウト設定 - 画面サイズに応じた高さを定義 */
+            --input-height-pc: 100px; /* PC用の入力エリアの高さ */
+            --input-height-mobile: 80px; /* モバイル用の入力エリアの高さ */
+            --input-height-small: 70px; /* 小型デバイス用の入力エリアの高さ */
+            --chat-max-width: 600px; /* チャット画面の最大幅 */
+            --message-max-width: 70%; /* メッセージの最大幅（画面幅に対する割合） */
         }
 
-        .container {
+        /* 基本レイアウト - ページ全体の設定 */
+        body {
+            font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+            /* フォントファミリーの設定。SF Pro Displayが利用できない場合は順次代替フォントを使用 */
             display: flex;
             flex-direction: column;
             align-items: center;
+            /* 縦方向に要素を配置し、中央揃えに */
+            background-color: var(--background-color);
+            margin: 0;
+            padding: 0;
             height: 100vh;
+            overflow: hidden;
+            /* 画面のスクロールを防止 */
+        }
+
+        /* チャットコンテナ - メッセージを表示する主要な領域 */
+        .chat-container {
+            width: 100%;
+            max-width: var(--chat-max-width);
+            height: calc(100vh - var(--input-height-pc));
+            /* 画面の高さから入力エリアの高さを引いた分 */
             padding: 20px;
-            box-sizing: border-box;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        /* ボード部分 */
-        .board {
-            display: flex;
-            gap: 20px;
-            flex: 1;
-            min-height: 0;
-            width: 100%;
-            justify-content: center;
-        }
-
-        /* カラム */
-        .column {
-            flex: 1;
-            background: #fff;
-            border-radius: 10px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            max-width: 350px;
-            min-width: 280px;
-        }
-
-        .column-header {
-            padding: 16px;
-            border-bottom: 1px solid #eee;
-        }
-
-        .column-header h2 {
-            margin: 0 0 12px 0;
-            font-size: 16px;
-            font-weight: 600;
-        }
-
-        .task-count {
-            background: #f0f0f0;
-            padding: 2px 8px;
+            margin: 0 auto var(--input-height-pc);
+            background-color: var(--background-color);
+            border: 1px solid var(--border-color);
             border-radius: 12px;
-            font-size: 12px;
-            margin-left: 8px;
-        }
-
-        /* タスク入力欄 */
-        .task-input {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            box-sizing: border-box;
-            font-size: 14px;
-        }
-
-        .task-input:focus {
-            outline: none;
-            border-color: #0066cc;
-            box-shadow: 0 0 0 2px rgba(0,102,204,0.2);
-        }
-
-        /* タスクリスト */
-        .task-list {
-            flex: 1;
             overflow-y: auto;
-            padding: 12px;
+            /* 縦方向のスクロールを可能に */
+            box-sizing: border-box;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            /* スクロールバーを非表示に */
+            padding-bottom: 30px; /* 下部に余白を追加 */
         }
 
-        /* タスクカード */
-        .task-card {
-            background: white;
-            border: 1px solid #eee;
-            border-radius: 6px;
-            padding: 12px;
-            margin-bottom: 8px;
-            cursor: pointer;
-            user-select: none;
+        /* Webkit系ブラウザ（Chrome, Safari等）でスクロールバーを非表示にする */
+        .chat-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* メッセージ共通スタイル - ユーザーとボットのメッセージの基本設定 */
+        .message {
             position: relative;
-        }
-
-        .task-card:hover {
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .task-title {
-            font-size: 14px;
-            margin-bottom: 8px;
-        }
-
-        .task-info {
+            max-width: var(--message-max-width);
+            width: fit-content;
+            margin: 8px 0;
+            font-size: 15px;
+            line-height: 1.4;
             display: flex;
-            gap: 8px;
-            font-size: 12px;
-            color: #666;
+            align-items: flex-start;
         }
 
-        .priority-badge {
-            padding: 2px 8px;
+        /* メッセージの内容を包む要素のスタイル */
+        .message-content {
+            padding: 10px 14px;
             border-radius: 12px;
-            font-size: 12px;
+            position: relative;
+            width: fit-content;
         }
 
-        .priority-high { background: #ffebee; color: #c62828; }
-        .priority-medium { background: #fff3e0; color: #ef6c00; }
-        .priority-low { background: #e8f5e9; color: #2e7d32; }
-
-        /* ツールボックス */
-        .toolbox {
-            margin-top: 20px;
-            padding: 12px 24px;
-            background: #fff;
-            border-radius: 10px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            display: inline-flex;
-            gap: 12px;
-            align-self: center;
+        /* ボットのメッセージ専用スタイル */
+        .bot-message {
+            margin-right: auto;
+            /* 左寄せ */
+            padding: 0;
         }
 
-        .tool-button {
-            padding: 8px 16px;
-            margin: 0 8px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            background: #fff;
-            color: #333;
+        .bot-message .message-content {
+            background-color: var(--neutral-color);
+            border-radius: 12px 12px 12px 4px;
+            /* 左下のみ角を小さく */
+        }
+
+        /* ボットのアバター画像スタイル */
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            /* 円形に切り取り */
+            margin-right: 12px;
+            flex-shrink: 0;
+            /* サイズを固定 */
+        }
+
+        /* ユーザーのメッセージ専用スタイル */
+        .user-message {
+            margin-left: auto;
+            /* 右寄せ */
+            padding: 0;
+            user-select: none;
+            /* テキスト選択を無効化 */
+            cursor: default;
+            justify-content: flex-end;
+            width: 100%;
+            display: flex;
+        }
+
+        .user-message .message-content {
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 12px 12px 4px 12px;
+            /* 右下のみ角を小さく */
+        }
+
+        /* 入力エリア - テキスト入力と送信ボタンを含む領域 */
+        .input-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: var(--input-height-pc);
+            padding: 16px 0;
+            background: var(--background-color);
+            border-top: 1px solid var(--border-color);
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.04);
+            /* 上部に影を付けて浮いているように見せる */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 入力エリアの内側のラッパー */
+        .input-wrapper {
+            width: 100%;
+            max-width: var(--chat-max-width);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 0 20px;
+        }
+
+        /* テキスト入力フィールド */
+        .input-container textarea {
+            flex: 1;
+            height: 52px;
+            padding: 16px 15px;
+            font-size: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            resize: none;
+            /* サイズ変更を無効化 */
+            transition: border-color 0.2s, box-shadow 0.2s;
+            /* 境界線と影のアニメーション */
+        }
+
+        /* テキスト入力フィールドがフォーカスされた時のスタイル */
+        .input-container textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px var(--primary-light);
+            /* フォーカス時に青い枠と影を表示 */
+        }
+
+        /* 送信ボタン */
+        .input-container button {
+            height: 32px;
+            padding: 0 24px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            /* 色と大きさのアニメーション */
+        }
+
+        /* 送信ボタンのホバー時のスタイル */
+        .input-container button:hover {
+            background-color: var(--hover-color);
+            /* より濃い青色に変化 */
+        }
+
+        /* 送信ボタンのクリック時のスタイル */
+        .input-container button:active {
+            transform: scale(0.98);
+            /* わずかに縮小してクリック感を演出 */
+        }
+
+        /* 候補ボタンのコンテナ */
+        .suggestion-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        /* 候補ボタン */
+        .bot-message button {
+            background-color: white;
+            border: 1px solid var(--border-color);
+            color: var(--primary-color);
+            padding: 6px 12px;
+            border-radius: 8px;
             font-size: 14px;
             cursor: pointer;
+            transition: background-color 0.2s;
+            flex: 0 1 auto;
+            white-space: nowrap;
+            /* テキストの折り返しを防止 */
+        }
+
+        /* 候補ボタンのホバー時のスタイル */
+        .bot-message button:hover {
+            background-color: var(--primary-light);
+            /* 薄い青色の背景に変化 */
+        }
+
+        /* コピーボタン */
+        .copy-button {
+            position: absolute;
+            left: calc(100% + 8px);
+            /* メッセージの右側に配置 */
+            top: 50%;
+            transform: translateY(-50%);
+            /* 垂直方向の中央揃え */
+            background: none;
+            border: none;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            padding: 0;
             transition: all 0.2s ease;
         }
 
-        .tool-button:hover {
-            background: #f5f5f7;
-            border-color: #999;
-            color: #000;
-        }
-
-        .tool-button:active {
-            background: #eee;
-            transform: translateY(1px);
-        }
-
-        /* コンテキストメニュー */
-        .context-menu {
-            display: none;
-            position: fixed;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            padding: 8px 0;
-            min-width: 200px;
-            z-index: 9999;
-        }
-
-        .context-menu-item {
-            padding: 8px 16px;
-            cursor: pointer;
-            font-size: 14px;
-            color: #333;
-            transition: background-color 0.2s;
-        }
-
-        .context-menu-item:hover {
-            background: #f5f5f7;
-        }
-
-        .context-menu-item.delete {
-            color: #dc3545;
-            border-top: 1px solid #eee;
-            margin-top: 8px;
-            padding-top: 8px;
-        }
-
-        /* モーダルフォーム */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-        }
-
-        .modal-content {
-            position: relative;
-            background-color: #fff;
-            margin: 10% auto;
-            padding: 20px;
-            width: 90%;
-            max-width: 330px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .close-button {
-            position: absolute;
-            right: 20px;
-            top: 20px;
-            font-size: 24px;
-            cursor: pointer;
-            color: #666;
-        }
-
-        .modal-title {
-            margin: 0 0 20px 0;
-            font-size: 18px;
-            color: #333;
-        }
-
-        .form-group {
-            margin-bottom: 16px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 14px;
-            color: #666;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 14px;
-            box-sizing: border-box;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: #0066cc;
-            box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
-        }
-
-        .modal-footer {
-            margin-top: 20px;
-            display: flex;
-            justify-content: flex-end;
-            gap: 12px;
-        }
-
-        .modal-button {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .modal-button.save {
-            background: #0066cc;
-            color: white;
-        }
-
-        .modal-button.save:hover {
-            background: #0052a3;
-        }
-
-        .modal-button.cancel {
-            background: #f5f5f7;
-            color: #333;
-        }
-
-        .modal-button.cancel:hover {
-            background: #e5e5e7;
-        }
-
-        .modal-button.delete {
-            background: #dc3545;
-            color: white;
-        }
-
-        .modal-button.delete:hover {
-            background: #c82333;
-        }
-
-        /* 確認ダイアログ */
-        #confirmDialog {
-            display: none;
-            position: fixed;
-            z-index: 1;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgb(0,0,0);
-            background-color: rgba(0,0,0,0.4);
-        }
-
-        #confirmDialog .modal-content {
-            background-color: #fefefe;
-            margin: 15% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 330px;
-        }
-
-        #confirmDialog .close-button {
-            color: #aaaaaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-        }
-
-        #confirmDialog .close-button:hover,
-        #confirmDialog .close-button:focus {
-            color: #000;
-            text-decoration: none;
-            cursor: pointer;
-        }
-
-        #confirmDialog .modal-title {
-            margin-bottom: 20px;
-        }
-
-        #confirmDialog .modal-body {
-            margin-bottom: 20px;
-        }
-
-        #confirmDialog .modal-footer {
-            display: flex;
-            justify-content: space-between;
-        }
-
-        #confirmDialog .modal-button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
-            background: #0066cc;
-            color: white;
-            font-size: 14px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            white-space: nowrap;
-        }
-
-        #confirmDialog .modal-button:hover {
-            background: #0052a3;
-        }
-
-        /* タスクカードのツールチップスタイル */
-        .task-card[title] {
-            position: relative;
-            cursor: help;
-        }
-
-        .task-card[title]:hover::after {
-            content: attr(title);
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 8px 12px;
-            background-color: rgba(0, 0, 0, 0.8);
-            color: white;
-            border-radius: 6px;
-            font-size: 14px;
-            white-space: pre-wrap;
-            max-width: 200px;
-            z-index: 1000;
-            pointer-events: none;
-        }
-
-        /* カスタムツールチップのスタイル */
-        .task-card {
-            position: relative;
-        }
-
-        .tooltip {
-            display: none;
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 8px 12px;
-            background-color: rgba(0, 0, 0, 0.8);
-            color: white;
-            border-radius: 6px;
-            font-size: 14px;
-            white-space: pre-wrap;
-            max-width: 200px;
-            z-index: 1000;
-            pointer-events: none;
-            margin-top: 8px;
-        }
-
-        .task-card:hover .tooltip {
-            display: block;
-        }
-
-        .tooltip::before {
-            content: '';
-            position: absolute;
-            top: -6px;
-            left: 50%;
-            transform: translateX(-50%);
-            border-width: 0 6px 6px 6px;
-            border-style: solid;
-            border-color: transparent transparent rgba(0, 0, 0, 0.8) transparent;
-        }
-
-        /* コンテキストメニューのz-indexを最前面に */
-        .context-menu {
-            display: none;
-            position: fixed;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            padding: 8px 0;
-            min-width: 200px;
-            z-index: 9999; /* 最前面に表示 */
-        }
-
-        /* カードのスタイルを修正 */
-        .card-content {
-            padding: 12px;
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .card-title {
-            margin: 0;
-            font-size: 15px;
-            font-weight: 600;
-            color: #333;
-            flex-grow: 1;
-        }
-
-        .priority-badge {
-            font-size: 12px;
-            padding: 2px 8px;
-            border-radius: 12px;
-            margin-left: 12px;
-            font-weight: 500;
-        }
-
-        .priority-badge.高 {
-            background-color: #ff4d4d;
-            color: white;
-        }
-
-        .priority-badge.中 {
-            background-color: #ffb84d;
-            color: white;
-        }
-
-        .priority-badge.低 {
-            background-color: #4db8ff;
-            color: white;
-        }
-
-        .priority-badge.completed {
-            background-color: #999;
-            color: white;
-        }
-
-        .card-dates {
-            display: flex;
-            gap: 16px; /* 日付間の固定間隔 */
-            font-size: 12px;
-            color: #666;
-        }
-
-        .date-label {
-            white-space: nowrap;
-            min-width: 80px; /* 日付ラベルの最小を設定 */
-        }
-
-        /* カードのハイライトスタイル */
-        .task-card.overdue {
-            background-color: rgba(255, 77, 77, 0.1); /* 期限切れは薄い赤色 */
-            border-left: 4px solid #ff4d4d;
-        }
-
-        .task-card.due-today {
-            background-color: rgba(255, 184, 77, 0.1); /* 当日はい黄色 */
-            border-left: 4px solid #ffb84d;
-        }
-
-        /* 完了カードのグレーアウト */
-        .column.了 .task-card {
-            background-color: #f5f5f5;
-            opacity: 0.8;
-        }
-
-        .column.完了 .priority-badge {
-            background-color: #999 !important; /* 完了カードの優先度バッジは全てグレー */
-        }
-
-        /* カレンダーピッカーのスタイル調整 */
-        .date-form-container {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .form-input[type="date"] {
-            padding: 8px 12px;
-            font-size: 14px;
-            width: 160px;
-        }
-
-        /* カンピッカーのポップアップ部分を大きく */
-        .form-input[type="date"]::-webkit-calendar-picker-indicator {
-            padding: 8px;
-            cursor: pointer;
-        }
-
-        /* カレンダーポップアップのサイズ調整（ブラウザごとに対応） */
-        ::-webkit-datetime-edit-fields-wrapper { padding: 0; }
-        ::-webkit-calendar-picker { 
+        /* コピーボタンのアイコン */
+        .copy-button .material-icons {
             font-size: 16px;
-            padding: 8px;
-        }
-        input[type="date"]::-webkit-inner-spin-button { 
-            height: 40px;
+            color: #8E8E93;
+            transition: all 0.2s ease;
         }
 
-        /* Firefoxのカレンダーポップアップ調整 */
-        @-moz-document url-prefix() {
-            .form-input[type="date"] {
-                position: relative;
+        /* コピー成功時のボタンスタイル */
+        .copy-button.copied .material-icons {
+            color: var(--primary-color);
+            /* アイコンを青色に変化 */
+        }
+
+        /* レスポンシブ対応 - タブレットとスマートフォン向けの設定 */
+        @media (max-width: 768px) {
+            body {
+                position: fixed;
+                width: 100%;
+                height: 100%;
             }
-            .form-input[type="date"]::-moz-calendar-picker-indicator {
-                width: 24px;
-                height: 24px;
-                position: absolute;
-                right: 8px;
-                top: 50%;
-                transform: translateY(-50%);
+
+            .chat-container {
+                height: calc(100vh - var(--input-height-mobile));
+                margin-bottom: var(--input-height-mobile);
+                padding: 15px;
+                border-radius: 0;
+                border: none;
+                /* モバイルでは境界線を削除 */
+                padding-bottom: 20px; /* モバイル用の下部余白調整 */
+            }
+
+            .message {
+                max-width: 85%;
+                /* メッセージの幅を広げる */
+            }
+
+            .input-container {
+                height: var(--input-height-mobile);
+                padding: 10px;
+            }
+
+            .copy-button {
+                left: calc(100% + 6px);
+                /* コピーボタンの位置を調整 */
             }
         }
 
-        /* クリアボタンのスタイル */
-        .clear-date-button {
-            padding: 10px 20px;  /* モー���保存ボタンと同じパディング */
-            border: none;
-            border-radius: 6px;
-            background: #f5f5f7;
-            color: #666;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.2s;
-            height: 40px;  /* 高さを固定 */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+        /* 小型デバイス（iPhone SE等）向けの設定 */
+        @media (max-width: 320px) {
+            .chat-container {
+                height: calc(100vh - var(--input-height-small));
+                margin-bottom: var(--input-height-small);
+                padding-bottom: 15px; /* 小型デバイス用の下部余白調整 */
+            }
 
-        .clear-date-button:hover {
-            background: #e5e5e7;
-            color: #333;
-        }
+            .message {
+                max-width: 90%;
+                font-size: 14px;
+                /* フォントサイズを小さく */
+            }
 
-        /* 日付入力フィールドの高さも揃える */
-        .form-input[type="date"] {
-            height: 40px;
-            padding: 0 12px;
-            box-sizing: border-box;
-        }
-
-        /* 優先度プルダウンの幅を制限するスタイルを削除 */
-        #priorityForm .form-input {
-            /* 幅の制限を削除し、他のフォーム要素と同じ幅に戻す */
-            width: 100%;
-            padding: 8px 12px;
-            height: 40px;
-            box-sizing: border-box;
-        }
-
-        /* 詳細フォームのテキストエリアサイズを固定 */
-        #detailsForm .form-input {
-            width: 100%;
-            height: 120px;  /* 高さを固定 */
-            resize: none;   /* リサイズ不可に */
-            padding: 12px;
-            line-height: 1.5;
-            font-size: 14px;
-            box-sizing: border-box;
-        }
-
-        /* ツールボックス関連のスタイルを追加 */
-        .result-message {
-            display: none;
-            position: fixed;
-            bottom: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 6px;
-            font-size: 14px;
-            z-index: 1000;
-        }
-
-        /* ファイル選択の装飾 */
-        .file-input-wrapper {
-            display: none;
-            position: absolute;
-            bottom: 60px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: white;
-            padding: 16px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        /* ツール情報のスタイル */
-        .tool-info {
-            padding: 20px 0;
-            line-height: 1.6;
-        }
-
-        .tool-info p {
-            margin: 10px 0;
-            font-size: 14px;
-            color: #333;
-        }
-
-        .tool-info strong {
-            color: #666;
-            margin-right: 8px;
+            .input-container textarea {
+                font-size: 14px;
+                /* 入力欄のフォントサイズも小さく */
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- メインコンテンツ -->
-        <main class="board">
-            <!-- 未着手カラム -->
-            <div class="column">
-                <div class="column-header">
-                    <h2>未着手 <span class="task-count">0</span></h2>
-                    <input type="text" class="task-input" placeholder="新規タスクを入力...">
-                </div>
-                <div class="task-list" data-status="未着手"></div>
-            </div>
 
-            <!-- 進行中カラム -->
-            <div class="column">
-                <div class="column-header">
-                    <h2>進行中 <span class="task-count">0</span></h2>
-                    <input type="text" class="task-input" placeholder="新規タスクを入力...">
-                </div>
-                <div class="task-list" data-status="進行中"></div>
-            </div>
+<!-- チャットメッセージを表示する領域 -->
+<div class="chat-container" id="chatContainer"></div>
 
-            <!-- 完了カラム -->
-            <div class="column">
-                <div class="column-header">
-                    <h2>完了 <span class="task-count">0</span></h2>
-                    <input type="text" class="task-input" placeholder="新規タスクを入力...">
-                </div>
-                <div class="task-list" data-status="完了"></div>
-            </div>
-        </main>
-
-        <!-- ツールボックス -->
-        <div class="toolbox">
-            <button class="tool-button">インポート</button>
-            <button class="tool-button">エクスポート</button>
-            <button class="tool-button">ツール情報</button>
-        </div>
-
-        <!-- コンテキストメニュー -->
-        <div class="context-menu">
-            <div class="context-menu-item">タイトル</div>
-            <div class="context-menu-item">優先度</div>
-            <div class="context-menu-item">開始日</div>
-            <div class="context-menu-item">期限日</div>
-            <div class="context-menu-item">詳細</div>
-            <div class="context-menu-item delete">削除</div>
-        </div>
-
-        <!-- モーダルフォーム -->
-        <div class="modal" id="taskModal">
-            <div class="modal-content">
-                <span class="close-button">&times;</span>
-                <h3 class="modal-title"></h3>
-                <div class="modal-body">
-                    <!-- タイトル編集 -->
-                    <div class="form-group" id="titleForm">
-                        <input type="text" maxlength="15" class="form-input" placeholder="15文字以内">
-                    </div>
-                    
-                    <!-- 優先度編集 -->
-                    <div class="form-group" id="priorityForm">
-                        <select class="form-input">
-                            <option value="高">高</option>
-                            <option value="中">中</option>
-                            <option value="低">低</option>
-                        </select>
-                    </div>
-                    
-                    <!-- 開始日編集 -->
-                    <div class="form-group" id="startDateForm">
-                        <div class="date-form-container">
-                            <input type="date" class="form-input">
-                            <button class="clear-date-button">クリア</button>
-                        </div>
-                    </div>
-                    
-                    <!-- 期限日編集 -->
-                    <div class="form-group" id="dueDateForm">
-                        <div class="date-form-container">
-                            <input type="date" class="form-input">
-                            <button class="clear-date-button">クリア</button>
-                        </div>
-                    </div>
-                    
-                    <!-- 詳細編集 -->
-                    <div class="form-group" id="detailsForm">
-                        <textarea maxlength="100" class="form-input" rows="3" placeholder="100文字以内"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="modal-button cancel">キャンセル</button>
-                    <button class="modal-button save">保存</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- 確認ダイアログ -->
-        <div class="modal" id="confirmDialog">
-            <div class="modal-content">
-                <h3 class="modal-title">確認</h3>
-                <div class="modal-body">
-                    <p>このタスクを削除してもよろしいですか？</p>
-                </div>
-                <div class="modal-footer">
-                    <button class="modal-button cancel">キャンセル</button>
-                    <button class="modal-button delete">削除</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- ツール情報モーダル -->
-        <div class="modal" id="toolInfoModal">
-            <div class="modal-content">
-                <span class="close-button">&times;</span>
-                <h3 class="modal-title">カンバン方式タスク管理ツール</h3>
-                <div class="tool-info">
-                    <p><strong>バージョン：</strong>v2.0.0（シンプル版）</p>
-                    <p><strong>最終更新日：</strong>2024-03-21</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- メッセージ表示用の要素を追加 -->
-        <div class="result-message"></div>
+<!-- 入力エリア -->
+<div class="input-container">
+    <div class="input-wrapper">
+        <textarea id="userInput" placeholder="文章を入力してください"></textarea>
+        <button onclick="ChatManager.sendMessage()">送信</button>
     </div>
+</div>
 
-    <script>
-        // タスクデータを管理するクラス
-        class TaskManager {
-            constructor() {
-                this.tasks = [];
-                this.loadTasks();
+<script>
+    // アプリケーション全体で使用する定数を定義
+    const CONSTANTS = {
+        BOT_CLASS: 'bot-message', // ボットメッセージのCSS クラス
+        USER_CLASS: 'user-message', // ユーザーメッセージのCSS クラス
+        BOT_AVATAR: 'https://api.dicebear.com/7.x/bottts/svg?seed=bot', // ボットのアバター画像URL
+        COPY_TIMEOUT: 1000, // コピー完了表示の持続時間（ミリ秒）
+    };
+
+    // 辞書データ - 用語と説明のペアを定義
+    const dictionary = {
+        "青パト": "青色のライトをつけた車でパトロール（見て回る）こと",
+        "歩きたばこ": "歩いている時に",
+        "暗証番号": "あなたが決める秘密の番号です。電子証明（№352）を使うときに必要です。",
+        "あんしん電話": "急に体調が悪くなった時、すぐに家族や近所の人にお知らせする機械。一人暮らしの障害がある人に便利です。",
+        "安否確認": "生きているかどうか、ケガをしていないかを調べること"
+    };
+
+    // チャットの主要な機能を管理するクラス
+    class ChatManager {
+        // メッセージを送信する処理
+        static sendMessage() {
+            const input = document.getElementById("userInput").value.trim();
+            if (!input) return; // 空の入力は無視
+
+            this.addUserMessage(input);
+            this.scrollToBottom();
+            
+            // 少し遅延を入れて自然な会話の流れを演出
+            setTimeout(() => {
+                this.findAndShowSuggestions(input);
+                this.scrollToBottom();
+            }, 500);
+            this.clearInput();
+        }
+
+        // ユーザーメッセージを追加
+        static addUserMessage(text) {
+            MessageRenderer.addMessage(text, CONSTANTS.USER_CLASS);
+        }
+
+        // 入力テキストから辞書の候補を検索して表示
+        static findAndShowSuggestions(input) {
+            const suggestions = Object.keys(dictionary).filter(word => input.includes(word));
+            if (suggestions.length > 0) {
+                const buttons = suggestions.map(this.createSuggestionButton).join("");
+                MessageRenderer.addMessage(`候補:<div class="suggestion-container">${buttons}</div>`, CONSTANTS.BOT_CLASS);
+            } else {
+                MessageRenderer.addMessage("候補が見つかりませんでした。", CONSTANTS.BOT_CLASS, true);
+            }
+        }
+
+        // 候補ボタンのHTML要素を生成
+        static createSuggestionButton(word) {
+            return `<button onclick="ChatManager.showDefinition('${word}')">${word}</button>`;
+        }
+
+        // 選択された用語の説明を表示
+        static showDefinition(word) {
+            const definition = dictionary[word];
+            const message = `【${word}】: ${definition}`;
+            MessageRenderer.addMessage(message, CONSTANTS.BOT_CLASS);
+            this.scrollToBottom();
+        }
+
+        // 入力フィールドをクリア
+        static clearInput() {
+            document.getElementById("userInput").value = '';
+        }
+
+        // チャット画面を最下部にスクロール
+        static scrollToBottom() {
+            const chatContainer = document.getElementById("chatContainer");
+            chatContainer.scrollTo({
+                top: chatContainer.scrollHeight + 20, // 20pxの余白を追加
+                behavior: 'smooth' // スムーズスクロール
+            });
+        }
+    }
+
+    // メッセージの表示を担当するクラス
+    class MessageRenderer {
+        // メッセージを画面に追加
+        static addMessage(text, className, noCopy = false) {
+            const messageDiv = this.createMessageDiv(className);
+            
+            // ボットメッセージの場合はアバターを追加
+            if (className === CONSTANTS.BOT_CLASS) {
+                messageDiv.appendChild(this.createAvatar());
+            }
+            
+            const messageContent = this.createMessageContent(text);
+            messageDiv.appendChild(messageContent);
+
+            // ボットの通常メッセージにはコピーボタンを追加
+            if (className === CONSTANTS.BOT_CLASS && !text.startsWith('候補:') && !noCopy) {
+                messageContent.appendChild(this.createCopyButton(text));
             }
 
-            // 15桁のユニークIDを生成
-            generateId() {
-                return Date.now().toString() + Math.random().toString().slice(2, 7);
-            }
+            document.getElementById("chatContainer").appendChild(messageDiv);
+        }
 
-            // 日付と時刻を取得するメソッドを追加
-            getFormattedDateTime() {
-                const now = new Date();
-                const year = now.getFullYear();
-                const month = String(now.getMonth() + 1).padStart(2, '0');
-                const day = String(now.getDate()).padStart(2, '0');
-                const hours = String(now.getHours()).padStart(2, '0');
-                const minutes = String(now.getMinutes()).padStart(2, '0');
-                const seconds = String(now.getSeconds()).padStart(2, '0');
+        // メッセージの外枠となるdiv要素を作成
+        static createMessageDiv(className) {
+            const div = document.createElement("div");
+            div.classList.add("message", className);
+            return div;
+        }
+
+        // ボットのアバター画像要素を作成
+        static createAvatar() {
+            const avatar = document.createElement("img");
+            avatar.classList.add("avatar");
+            avatar.src = CONSTANTS.BOT_AVATAR;
+            avatar.alt = "Bot";
+            return avatar;
+        }
+
+        // メッセージの内容を表示する要素を作成
+        static createMessageContent(text) {
+            const content = document.createElement("div");
+            content.classList.add("message-content");
+            content.innerHTML = text;
+            return content;
+        }
+
+        // コピーボタンを作成
+        static createCopyButton(text) {
+            const button = document.createElement("button");
+            button.classList.add("copy-button");
+            button.innerHTML = '<span class="material-icons">content_copy</span>';
+            button.onclick = (event) => this.handleCopy(text, event);
+            return button;
+        }
+
+        // コピー機能の処理
+        static async handleCopy(text, event) {
+            try {
+                // HTMLタグを除去してテキストのみをコピー
+                const cleanText = text.replace(/<[^>]*>/g, '');
+                await navigator.clipboard.writeText(cleanText);
+                const button = event.currentTarget;
+                const icon = button.querySelector('.material-icons');
                 
-                return `${year}-${month}-${day}-${hours}-${minutes}-${seconds}`;
-            }
-
-            // 新規タスクを作成
-            createTask(title, status) {
-                const task = {
-                    id: this.generateId(),
-                    title: title.trim().slice(0, 15),
-                    status: status,
-                    createdDate: this.getFormattedDateTime(),
-                    startDate: '未設定',
-                    dueDate: '未設定',
-                    priority: '中',
-                    details: '',
-                    completedDate: '未設定'
-                };
-
-                this.tasks.push(task);
-                this.saveTasks();
-                return task;
-            }
-
-            // 日付をyyyy-mm-dd形式にフォーマット
-            formatDate(date) {
-                return date.toISOString().split('T')[0];
-            }
-
-            // タスクの表示用日付フォーマット（mm/dd）
-            formatDisplayDate(dateStr) {
-                if (dateStr === "未設定") return " - ";
-                const date = new Date(dateStr);
-                return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}`;
-            }
-
-            // ローカルスージからスクを読み込み
-            loadTasks() {
-                const savedTasks = localStorage.getItem('tasks');
-                this.tasks = savedTasks ? JSON.parse(savedTasks) : [];
-                this.renderAllTasks();
-            }
-
-            // ローカルストレージにタスクを保存
-            saveTasks() {
-                localStorage.setItem('tasks', JSON.stringify(this.tasks));
-                this.renderAllTasks();
-            }
-
-            // タスクのステータスを更新
-            updateTaskStatus(taskId, newStatus) {
-                const task = this.tasks.find(t => t.id === taskId);
-                if (task) {
-                    task.status = newStatus;
-                    task.completedDate = newStatus === '完了' ? 
-                        this.getFormattedDateTime() : '未設定';
-                    this.saveTasks();
-                }
-            }
-
-            // タスクの表示を更新
-            renderAllTasks() {
-                const columns = document.querySelectorAll('.task-list');
-                columns.forEach(column => {
-                    column.innerHTML = '';
-                    const status = column.dataset.status;
-                    const filteredTasks = this.tasks.filter(task => task.status === status);
-                    
-                    // ステータスに応じてソート
-                    if (status === "完了") {
-                        filteredTasks.sort((a, b) => b.completedDate.localeCompare(a.completedDate));
-                    } else {
-                        filteredTasks.sort((a, b) => {
-                            // 優先度でソート
-                            const priorityOrder = { "高": 0, "中": 1, "低": 2 };
-                            if (priorityOrder[a.priority] !== priorityOrder[b.priority]) {
-                                return priorityOrder[a.priority] - priorityOrder[b.priority];
-                            }
-                            // 期限日でソート
-                            if (a.dueDate !== "未設定" && b.dueDate !== "未設定") {
-                                return a.dueDate.localeCompare(b.dueDate);
-                            }
-                            // 作成日ソート
-                            return a.createdDate.localeCompare(b.createdDate);
-                        });
-                    }
-
-                    filteredTasks.forEach(task => {
-                        column.appendChild(this.createTaskCard(task));
-                    });
-
-                    // タスク数を更新
-                    const countElement = column.parentElement.querySelector('.task-count');
-                    countElement.textContent = filteredTasks.length;
-                });
-            }
-
-            // タスクカードのHTML要素を作成
-            createTaskCard(task) {
-                const card = document.createElement('div');
-                card.className = 'task-card';
-                card.draggable = true;
-                card.dataset.taskId = task.id;
-
-                // 期限切れや当日期限のハイライト
-                if (task.status !== '完了') {
-                    const today = new Date().toISOString().split('T')[0];
-                    if (task.dueDate !== '未設定') {
-                        if (task.dueDate < today) {
-                            card.classList.add('overdue');
-                        } else if (task.dueDate === today) {
-                            card.classList.add('due-today');
-                        }
-                    }
-                }
-
-                // 日付のフォーマット
-                const formatDate = (date) => {
-                    if (date === '未設定') return ' - ';
-                    const d = new Date(date);
-                    return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
-                };
-
-                // カードの内容を設定
-                card.innerHTML = `
-                    <div class="card-content">
-                        <div class="card-header">
-                            <h3 class="card-title">${task.title}</h3>
-                            <span class="priority-badge ${task.status === '完了' ? 'completed' : task.priority}">
-                                ${task.priority}
-                            </span>
-                        </div>
-                        <div class="card-dates">
-                            <span class="date-label">開始: ${formatDate(task.startDate)}</span>
-                            <span class="date-label">期限: ${formatDate(task.dueDate)}</span>
-                        </div>
-                    </div>
-                `;
-
-                // 詳細がある場合のみツールチップを設定
-                if (task.details && task.details.trim()) {
-                    const tooltip = document.createElement('div');
-                    tooltip.className = 'tooltip';
-                    tooltip.textContent = task.details;
-                    card.appendChild(tooltip);
-                }
-
-                return card;
-            }
-
-            // タスクの更新
-            updateTask(taskId, updates) {
-                const task = this.tasks.find(t => t.id === taskId);
-                if (task) {
-                    Object.assign(task, updates);
-                    this.saveTasks();
-                }
-            }
-
-            // タスクの削除
-            deleteTask(taskId) {
-                const index = this.tasks.findIndex(t => t.id === taskId);
-                if (index !== -1) {
-                    this.tasks.splice(index, 1);
-                    this.saveTasks();
-                }
-            }
-
-            exportToCsv() {
-                const taskCount = this.tasks.length;
-                if (taskCount === 0) {
-                    this.showResultMessage('エクスポートするタスクがありません');
-                    return;
-                }
-
-                // CSVヘッダー
-                const headers = ['ID', 'タイトル', 'ステータス', '作成日', '開始日', '期限日', '優先度', '詳細', '完了日'];
+                // コピー成功時のアイコンとスタイルの変更
+                icon.textContent = 'check';
+                button.classList.add('copied');
                 
-                // タスクデータをCSV形式に変換
-                const csvData = [
-                    headers,
-                    ...this.tasks.map(task => [
-                        task.id,
-                        task.title,
-                        task.status,
-                        task.createdDate,
-                        task.startDate,
-                        task.dueDate,
-                        task.priority,
-                        task.details,
-                        task.completedDate
-                    ])
-                ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
-
-                // BOMを付与してUTF-8でエンコード
-                const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
-                const blob = new Blob([bom, csvData], { type: 'text/csv;charset=utf-8' });
-                
-                // ファイル名を設定（現在の日時を含める）
-                const timestamp = new Date().toISOString().replace(/[:.]/g, '').slice(0, 15);
-                const filename = `tasks_${timestamp}.csv`;
-
-                // ダウンロード
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = filename;
-                link.click();
-                URL.revokeObjectURL(link.href);
-
-                this.showResultMessage(`${taskCount}件のタスクをエクスポートしました\nファイル名: tasks_${timestamp}.csv`);
-            }
-
-            importFromCsv(file) {
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    
-                    reader.onload = (e) => {
-                        try {
-                            const content = e.target.result;
-                            const lines = content.split('\n');
-                            
-                            // ヘッダーの検証
-                            const headers = lines[0].split(',').map(h => h.replace(/"/g, ''));
-                            const requiredHeaders = ['ID', 'タイトル', 'ステータス', '作成日', '開始日', '期限日', '優先度', '詳細', '完了日'];
-                            if (!requiredHeaders.every(h => headers.includes(h))) {
-                                throw new Error('CSVファイルの形式が正しくありません');
-                            }
-
-                            // データの解析と検証
-                            const newTasks = [];
-                            const invalidRows = [];
-                            const totalRows = lines.length - 1; // ヘッダーを除く
-
-                            for (let i = 1; i < lines.length; i++) {
-                                if (!lines[i].trim()) continue;
-                                
-                                try {
-                                    const values = lines[i].split(',').map(v => v.replace(/"/g, ''));
-                                    const task = {
-                                        id: values[0],
-                                        title: values[1].slice(0, 15),
-                                        status: ['未着手', '進行中', '完了'].includes(values[2]) ? values[2] : '未着手',
-                                        createdDate: this.validateDate(values[3]),
-                                        startDate: this.validateDate(values[4]),
-                                        dueDate: this.validateDate(values[5]),
-                                        priority: ['高', '中', '低'].includes(values[6]) ? values[6] : '中',
-                                        details: values[7].slice(0, 100),
-                                        completedDate: this.validateDate(values[8])
-                                    };
-                                    newTasks.push(task);
-                                } catch (err) {
-                                    invalidRows.push(i);
-                                }
-                            }
-
-                            // 結果メッセージの生成
-                            const successCount = newTasks.length;
-                            const failCount = invalidRows.length;
-                            let resultMessage = '';
-
-                            if (successCount > 0) {
-                                resultMessage = `${successCount}件のタスクを取り込みました`;
-                                if (failCount > 0) {
-                                    resultMessage += `\n${failCount}件の取り込みに失敗`;
-                                    if (invalidRows.length <= 3) {
-                                        resultMessage += `\n対象行: ${invalidRows.join(', ')}行目`;
-                                    }
-                                }
-                            } else {
-                                resultMessage = 'タスクの取り込みに失敗しました';
-                            }
-
-                            // タスクを更新
-                            if (successCount > 0) {
-                                this.tasks = newTasks;
-                                this.saveTasks();
-                            }
-                            
-                            resolve(resultMessage);
-                        } catch (error) {
-                            reject(new Error(`インポートエラー: ${error.message}`));
-                        }
-                    };
-
-                    reader.onerror = () => reject(new Error('ファイルの読み込みに失敗しました'));
-                    reader.readAsText(file, 'UTF-8');
-                });
-            }
-
-            validateDate(dateStr) {
-                if (!dateStr || dateStr === '未設定') return '未設定';
-                const date = new Date(dateStr);
-                return isNaN(date.getTime()) ? '未設定' : dateStr;
-            }
-
-            showResultMessage(message) {
-                const messageEl = document.querySelector('.result-message');
-                messageEl.textContent = message;
-                messageEl.style.display = 'block';
-                messageEl.style.whiteSpace = 'pre-line'; // 改行を表示するために追加
+                // 一定時間後に元のスタイルに戻す
                 setTimeout(() => {
-                    messageEl.style.display = 'none';
-                }, 5000); // メッセージ表示時間を5秒に延長
+                    icon.textContent = 'content_copy';
+                    button.classList.remove('copied');
+                }, CONSTANTS.COPY_TIMEOUT);
+            } catch (error) {
+                console.error('コピーに失敗しました:', error);
             }
         }
+    }
 
-        // UIを管理するクラスを追加
-        class TaskUI {
-            constructor(taskManager) {
-                this.taskManager = taskManager;
-                this.contextMenu = document.querySelector('.context-menu');
-                this.taskModal = document.getElementById('taskModal');
-                this.confirmDialog = document.getElementById('confirmDialog');
-                this.currentTaskId = null;
+    // ページ読み込み完了時の初期化処理
+    document.addEventListener('DOMContentLoaded', () => {
+        const userInput = document.getElementById("userInput");
+        const sendButton = document.querySelector('.input-container button');
 
-                // 初期状態で非表示に設定
-                this.contextMenu.style.display = 'none';
-                this.taskModal.style.display = 'none';
-                this.confirmDialog.style.display = 'none';
-
-                this.setupEventListeners();
+        // Enterキーでメッセージを送信（Shift+Enterは改行）
+        userInput.addEventListener("keydown", e => {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                ChatManager.sendMessage();
             }
-
-            setupEventListeners() {
-                // コンテキストメニューの表示制御
-                document.addEventListener('contextmenu', (e) => {
-                    if (e.target.closest('.task-card')) {
-                        e.preventDefault();
-                        this.showContextMenu(e);
-                    }
-                });
-
-                // コンテキストメニュー以外をクリックした時に閉じる
-                document.addEventListener('click', () => {
-                    this.contextMenu.style.display = 'none';
-                });
-
-                // モーダルの閉じるボタン
-                document.querySelectorAll('.close-button, .modal-button.cancel').forEach(button => {
-                    button.addEventListener('click', () => {
-                        this.taskModal.style.display = 'none';
-                        this.confirmDialog.style.display = 'none';
-                    });
-                });
-
-                // コンテキストメニューのアイテムクリック
-                this.contextMenu.addEventListener('click', (e) => {
-                    const item = e.target.closest('.context-menu-item');
-                    if (!item) return;
-
-                    const action = item.textContent;
-                    switch (action) {
-                        case 'タイトル':
-                            this.showEditModal('titleForm');
-                            break;
-                        case '優先度':
-                            this.showEditModal('priorityForm');
-                            break;
-                        case '開始日':
-                            this.showEditModal('startDateForm');
-                            break;
-                        case '期限日':
-                            this.showEditModal('dueDateForm');
-                            break;
-                        case '詳細':
-                            this.showEditModal('detailsForm');
-                            break;
-                        case '削除':
-                            this.showConfirmDialog();
-                            break;
-                    }
-                });
-
-                // モーダルの保存ボタン
-                this.taskModal.querySelector('.modal-button.save').addEventListener('click', () => {
-                    this.saveTaskChanges();
-                });
-
-                // 削除の確認ダイアログ
-                this.confirmDialog.querySelector('.modal-button.delete').addEventListener('click', () => {
-                    this.taskManager.deleteTask(this.currentTaskId);
-                    this.confirmDialog.style.display = 'none';
-                });
-
-                // クリアボタンのイベントリスナーを追加
-                this.taskModal.querySelectorAll('.clear-date-button').forEach(button => {
-                    button.addEventListener('click', (e) => {
-                        const dateInput = e.target.previousElementSibling;
-                        dateInput.value = '';
-                    });
-                });
-
-                // インポート・エクスポートボタンのイベントリスナー
-                document.querySelector('.tool-button:nth-child(1)').addEventListener('click', () => {
-                    const fileInput = document.createElement('input');
-                    fileInput.type = 'file';
-                    fileInput.accept = '.csv';
-                    fileInput.onchange = async (e) => {
-                        try {
-                            const resultMessage = await this.taskManager.importFromCsv(e.target.files[0]);
-                            this.taskManager.showResultMessage(resultMessage);
-                        } catch (error) {
-                            this.taskManager.showResultMessage(`エラー: ${error.message}`);
-                        }
-                    };
-                    fileInput.click();
-                });
-
-                document.querySelector('.tool-button:nth-child(2)').addEventListener('click', () => {
-                    this.taskManager.exportToCsv();
-                });
-
-                // ツール情報ボタンのイベントリスナー
-                document.querySelector('.tool-button:nth-child(3)').addEventListener('click', () => {
-                    const toolInfoModal = document.getElementById('toolInfoModal');
-                    toolInfoModal.style.display = 'block';
-                });
-
-                // ツール情報モーダルの閉じるボタン
-                document.querySelector('#toolInfoModal .close-button').addEventListener('click', () => {
-                    document.getElementById('toolInfoModal').style.display = 'none';
-                });
-            }
-
-            showContextMenu(e) {
-                const taskCard = e.target.closest('.task-card');
-                this.currentTaskId = taskCard.dataset.taskId;
-                
-                this.contextMenu.style.display = 'block';
-                this.contextMenu.style.left = `${e.pageX}px`;
-                this.contextMenu.style.top = `${e.pageY}px`;
-
-                // 画面端での位置調整
-                const rect = this.contextMenu.getBoundingClientRect();
-                if (rect.right > window.innerWidth) {
-                    this.contextMenu.style.left = `${e.pageX - rect.width}px`;
-                }
-                if (rect.bottom > window.innerHeight) {
-                    this.contextMenu.style.top = `${e.pageY - rect.height}px`;
-                }
-            }
-
-            showEditModal(formId) {
-                const task = this.taskManager.tasks.find(t => t.id === this.currentTaskId);
-                if (!task) return;
-
-                // モーダルのタイトルを設定
-                const modalTitles = {
-                    'titleForm': 'タイトル',
-                    'priorityForm': '優先度',
-                    'startDateForm': '開始日',
-                    'dueDateForm': '期限日',
-                    'detailsForm': '詳細'
-                };
-                this.taskModal.querySelector('.modal-title').textContent = modalTitles[formId];
-
-                // 編対象のフォームだけを表示
-                const forms = this.taskModal.querySelectorAll('.form-group');
-                forms.forEach(form => form.style.display = 'none');
-                this.taskModal.querySelector(`#${formId}`).style.display = 'block';
-
-                // フォームに現在の値を設定
-                const input = this.taskModal.querySelector(`#${formId} .form-input`);
-                switch (formId) {
-                    case 'titleForm':
-                        input.value = task.title;
-                        break;
-                    case 'priorityForm':
-                        input.value = task.priority;
-                        break;
-                    case 'startDateForm':
-                        input.value = task.startDate === '未設定' ? '' : task.startDate;
-                        break;
-                    case 'dueDateForm':
-                        input.value = task.dueDate === '未設定' ? '' : task.dueDate;
-                        break;
-                    case 'detailsForm':
-                        input.value = task.details;
-                        break;
-                }
-
-                this.taskModal.style.display = 'block';
-
-                // 日付フォームの場合、クリアボタンの表示/非表示を制御
-                if (formId === 'startDateForm' || formId === 'dueDateForm') {
-                    const clearButton = this.taskModal.querySelector(`#${formId} .clear-date-button`);
-                    clearButton.style.display = 'block';
-                }
-            }
-
-            saveTaskChanges() {
-                const visibleForm = Array.from(this.taskModal.querySelectorAll('.form-group'))
-                    .find(form => form.style.display !== 'none');
-                
-                if (!visibleForm) return;
-
-                const input = visibleForm.querySelector('.form-input');
-                const updates = {};
-
-                switch (visibleForm.id) {
-                    case 'titleForm':
-                        updates.title = input.value.trim().slice(0, 15);
-                        break;
-                    case 'priorityForm':
-                        updates.priority = input.value;
-                        break;
-                    case 'startDateForm':
-                        updates.startDate = input.value || '未設定';
-                        break;
-                    case 'dueDateForm':
-                        updates.dueDate = input.value || '未設定';
-                        break;
-                    case 'detailsForm':
-                        updates.details = input.value.trim().slice(0, 100);
-                        break;
-                }
-
-                this.taskManager.updateTask(this.currentTaskId, updates);
-                this.taskModal.style.display = 'none';
-            }
-
-            showConfirmDialog() {
-                this.confirmDialog.style.display = 'block';
-            }
-        }
-
-        // アプリケーションの初期化
-        document.addEventListener('DOMContentLoaded', function() {
-            const taskManager = new TaskManager();
-            const taskUI = new TaskUI(taskManager);
-
-            // 新規タスク作成のイベントリスナー
-            document.querySelectorAll('.task-input').forEach(input => {
-                input.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter' && e.target.value.trim()) {
-                        const status = e.target.closest('.column').querySelector('.task-list').dataset.status;
-                        taskManager.createTask(e.target.value.trim(), status);
-                        e.target.value = '';
-                    }
-                });
-            });
-
-            // ドラッグ&ドロップの実装
-            document.querySelectorAll('.task-list').forEach(list => {
-                list.addEventListener('dragover', e => {
-                    e.preventDefault();
-                    const draggingCard = document.querySelector('.task-card.dragging');
-                    if (draggingCard) {
-                        const cards = [...list.querySelectorAll('.task-card:not(.dragging)')];
-                        const afterCard = cards.find(card => {
-                            const rect = card.getBoundingClientRect();
-                            return e.clientY < rect.top + rect.height / 2;
-                        });
-                        list.insertBefore(draggingCard, afterCard);
-                    }
-                });
-            });
-
-            document.addEventListener('dragstart', e => {
-                if (e.target.classList.contains('task-card')) {
-                    e.target.classList.add('dragging');
-                }
-            });
-
-            document.addEventListener('dragend', e => {
-                if (e.target.classList.contains('task-card')) {
-                    e.target.classList.remove('dragging');
-                    const newStatus = e.target.closest('.task-list').dataset.status;
-                    taskManager.updateTaskStatus(e.target.dataset.taskId, newStatus);
-                }
-            });
         });
-    </script>
+
+        // 送信ボタンのクリックイベント
+        sendButton.addEventListener("click", () => {
+            ChatManager.sendMessage();
+        });
+    });
+</script>
+
 </body>
-</html> 
+</html>
