@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>行政情報ポータル</title>
+    <style>
+        /* カラー変数の定義 */
+        :root {
+            --primary: #1A365D;          /* メインカラー：深い紺青 */
+            --primary-light: #F5F8FB;    /* 薄い青（背景用） */
+            --primary-dark: #002347;     /* 濃い青（ホバー用） */
+            --accent: #4A78A9;           /* アクセントカラー */
+            --text-primary: #333;        /* 主要テキスト */
+            --text-secondary: #666;      /* 補足テキスト */
+            --border-color: #e0e0e0;     /* ボーダー色 */
+        }
+
+        /* 基本スタイル */
+        body {
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* サイトタイトル */
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        header h1 {
+            color: var(--primary);
+            font-size: 1.8em;
+            margin: 10px 0;
+            border-bottom: 3px solid var(--primary-light);
+            padding-bottom: 10px;
+        }
+
+        /* 更新情報欄 */
+        .news-container {
+            max-width: 800px;
+            margin: 0 auto 20px;
+            background: white;
+            border-radius: 12px;
+            border: 1px solid rgba(26,54,93,0.1);
+            box-shadow: 
+                0 2px 4px rgba(26,54,93,0.05),
+                0 12px 25px rgba(26,54,93,0.05);
+            border-left: 4px solid var(--primary);
+        }
+
+        .news-container h2 {
+            padding: 12px 20px;
+            margin: 0;
+            border-bottom: none;
+            font-size: 1.1em;
+            color: var(--primary);
+            background: var(--primary-light);
+            border-radius: 12px 12px 0 0;
+            letter-spacing: 0.5px;
+        }
+
+        .news-content {
+            height: 150px;
+            overflow-y: auto;
+            padding: 0 20px;
+        }
+
+        .news-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .news-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.95em;
+            transition: all 0.2s ease;
+            background: linear-gradient(to right, transparent 50%, #f8f9fa 50%);
+            background-size: 200% 100%;
+            background-position: left bottom;
+        }
+
+        .news-item:hover {
+            background-position: right bottom;
+            padding-left: 5px;
+            background-color: var(--primary-light);
+            border-left: 3px solid var(--primary);
+        }
+
+        .news-date {
+            color: #666;
+            white-space: nowrap;
+            font-size: 0.9em;
+            min-width: 95px;
+        }
+
+        .news-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: bold;
+            min-width: 64px;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .news-tag:hover {
+            transform: scale(1.05);
+        }
+
+        .tag-notice { background: #f2f6fa; color: #003366; }    /* お知らせ */
+        .tag-important { background: #fff5f5; color: #842029; } /* 重要 */
+        .tag-update { background: #f6f8f6; color: #285430; }    /* 更新 */
+
+        .news-text {
+            margin: 0;
+            flex-grow: 1;
+        }
+
+        /* 検索ボックス */
+        .search-container {
+            text-align: center;
+            margin: 15px 0;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .search-box {
+            width: 50%;
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .search-box:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0,51,102,0.1);
+            outline: none;
+        }
+
+        .search-button {
+            padding: 10px 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(26,54,93,0.2);
+        }
+
+        .search-button:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .search-button:active {
+            transform: translateY(1px);
+        }
+
+        /* イルグリッド */
+        .tile-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .tile {
+            background: white;
+            padding: 25px;
+            min-height: 220px;
+            border-radius: 12px;
+            border: 1px solid rgba(26,54,93,0.1);
+            box-shadow: 
+                0 2px 4px rgba(26,54,93,0.05),
+                0 12px 25px rgba(26,54,93,0.05);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            border-top: 3px solid transparent;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .tile:hover {
+            border-top: 3px solid var(--primary);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .tile::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .tile:active::after {
+            opacity: 1;
+            transition: opacity 0.1s ease;
+        }
+
+        .tile h3 {
+            margin: 10px 0;
+            font-size: 1.1em;
+            color: var(--primary);
+        }
+
+        .tile p {
+            margin: 0;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+
+        .tile-icon svg {
+            width: 40px;
+            height: 40px;
+            fill: var(--primary);
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .tile:hover .tile-icon svg {
+            transform: scale(1.1);
+        }
+
+        /* レスポンシブ対応 */
+        @media (max-width: 768px) {
+            /* モバイル向けには元のサイズを維持 */
+            body {
+                padding: 20px;
+            }
+            
+            header h1 {
+                font-size: 2em;
+            }
+
+            .news-content {
+                height: 200px;
+            }
+
+            .tile-icon svg {
+                width: 48px;
+                height: 48px;
+            }
+        }
+
+        /* モーダルウィンドウ */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 700px;
+            height: 85vh;
+            background: white;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            padding: 30px;
+            overflow-y: auto;
+            z-index: 1001;
+            border-radius: 15px;
+            transition: all 0.3s ease-out;
+            opacity: 0;
+            transform: translate(-50%, -48%) scale(0.98);
+            border-top: 4px solid var(--primary);
+        }
+
+        .modal.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .category-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .category-item {
+            background: white;
+            padding: 20px 25px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid #eee;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            position: relative;
+            min-height: 80px;
+            border-left: 3px solid transparent;
+        }
+
+        .category-item:hover {
+            background: var(--primary-light);
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-left: 3px solid var(--primary);
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 28px;
+            color: #666;
+            cursor: pointer;
+            transition: color 0.2s;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .close-modal:hover {
+            color: #333;
+            background: #f0f0f0;
+        }
+
+        .breadcrumb {
+            margin-bottom: 25px;
+            padding: 15px 20px;
+            background: var(--primary-light);
+            border-radius: 8px;
+            font-size: 15px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .breadcrumb a {
+            color: var(--primary);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .breadcrumb a:hover {
+            color: #004999;
+        }
+
+        .sub-item {
+            padding: 20px 25px;
+            background: #ffffff;
+            border-left: 4px solid #0066cc;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sub-item::after {
+            content: "→";
+            margin-left: 15px;
+            color: #0066cc;
+            font-weight: bold;
+        }
+
+        .category-item::after {
+            content: "→";
+            position: absolute;
+            right: 25px;
+            color: #666;
+            font-weight: bold;
+            transition: transform 0.3s ease;
+        }
+
+        .category-item:hover::after {
+            transform: translateX(5px);
+        }
+
+        /* オーバーレイを追加 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            transition: opacity 0.3s ease;
+            opacity: 0;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+        }
+
+        /* 検索結果のスタイル */
+        .search-result {
+            padding: 20px 25px;
+        }
+
+        .search-result small {
+            color: #666;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        /* アイコンのスタイル */
+        .tile-icon svg {
+            width: 48px;
+            height: 48px;
+            fill: var(--primary);
+        }
+
+        /* 更新情報のタグスタイル */
+        .news-tag {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            margin-right: 8px;
+            font-weight: bold;
+        }
+
+        .tag-notice { background: var(--primary-light); color: var(--primary); }    /* お知らせ */
+        .tag-important { background: #fbe9e7; color: #d84315; } /* 重要 */
+        .tag-update { background: #e8f5e9; color: #2e7d32; }    /* 更新 */
+
+        /* スクロールバーのカスタマイズ */
+        .news-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .news-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .news-content::-webkit-scrollbar-thumb {
+            background: #ccd7e2;
+            border-radius: 4px;
+        }
+
+        .news-content::-webkit-scrollbar-thumb:hover {
+            background: #b3c2d1;
+        }
+
+        /* アクセシビリティのための追加 */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                transition: none !important;
+            }
+        }
+
+        /* ハイコントラストモード対応 */
+        @media (forced-colors: active) {
+            .tile, .news-container, .search-button {
+                border: 1px solid currentColor;
+            }
+        }
+
+        /* レスポンシブ対応 */
+        @media (max-width: 768px) {
+            .tile-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .tile-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- サイトタイトル -->
+    <header style="text-align: center; margin-bottom: 30px;">
+        <h1 style="color: #333; font-size: 2em;">外国人生活支援ポータルサイト</h1>
+    </header>
+
+    <!-- ���新情報欄 -->
+    <div class="news-container">
+        <h2>更新情報</h2>
+        <div class="news-content">
+            <ul class="news-list">
+                <li class="news-item">
+                    <span class="news-date">2024年3月20日</span>
+                    <span class="news-tag tag-important">重要</span>
+                    <span class="news-text">令和6年能登半島地震に関する支援情報を更新しました</span>
+                </li>
+                <li class="news-item">
+                    <span class="news-date">2024年3月15日</span>
+                    <span class="news-tag tag-update">更新</span>
+                    <span class="news-text">在留資格更新手続きのガイドラインを更新しました</span>
+                </li>
+                <li class="news-item">
+                    <span class="news-date">2024年3月10日</span>
+                    <span class="news-tag tag-notice">お知らせ</span>
+                    <span class="news-text">マイナンバーカードの申請方法に関する多言語資料を追加しました</span>
+                </li>
+                <li class="news-item">
+                    <span class="news-date">2024年3月5日</span>
+                    <span class="news-tag tag-update">更新</span>
+                    <span class="news-text">子育て支援制度に関する情報を更新しました</span>
+                </li>
+                <li class="news-item">
+                    <span class="news-date">2024年3月1日</span>
+                    <span class="news-tag tag-notice">お知らせ</span>
+                    <span class="news-text">新年度の住民税申告に関する多言語ガイドを公開しました</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 検索ボックス -->
+    <div class="search-container">
+        <input type="text" class="search-box" placeholder="キーワードを入力して検索...">
+        <button class="search-button">検索</button>
+    </div>
+
+    <!-- タイルグリッド -->
+    <div class="tile-grid">
+        <div class="tile" onclick="showModal('カテゴリ別')">
+            <div class="tile-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v4h10V2a1 1 0 0 0-1-1H4zm9 6H3v2h10V7zm0 3H3v2h10v-2zm0 3H3v2h10v-2z"/>
+                </svg>
+            </div>
+            <h3>カテゴリ別</h3>
+            <p>在留手続き・教育・医療など<br>目的別に探せる行政サービス</p>
+        </div>
+        <div class="tile" onclick="showModal('ガイドブック')">
+            <div class="tile-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811V2.828zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492V2.687zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783z"/>
+                </svg>
+            </div>
+            <h3>生活ガイドブック</h3>
+            <p>日本での生活に必要な情報を<br>多言語で解説</p>
+        </div>
+        <div class="tile" onclick="showModal('特設ページ')">
+            <div class="tile-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2zm.995-14.901a1 1 0 1 0-1.99 0A5.002 5.002 0 0 0 3 6c0 1.098-.5 6-2 7h14c-1.5-1-2-5.902-2-7 0-2.42-1.72-4.44-4.005-4.901z"/>
+                </svg>
+            </div>
+            <h3>重要なお知らせ</h3>
+            <p>災害支援・感染症対策など<br>緊急性の高い情報</p>
+        </div>
+        <div class="tile" onclick="showModal('やさしい日本語')">
+            <div class="tile-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M4.545 6.714 4.11 8H3l1.862-5h1.284L8 8H6.833l-.435-1.286H4.545zm1.634-.736L5.5 3.956h-.049l-.679 2.022H6.18z"/>
+                    <path d="M0 2a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v3h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-3H2a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H2zm7.138 9.995c.193.301.402.583.63.846-.748.575-1.673 1.001-2.768 1.292.178.217.451.635.555.867 1.125-.359 2.08-.844 2.886-1.494.777.665 1.739 1.165 2.93 1.472.133-.254.414-.673.629-.89-1.125-.253-2.057-.694-2.82-1.284.681-.747 1.222-1.651 1.621-2.757H14V8h-3v1.047h.765c-.318.844-.74 1.546-1.272 2.13a6.066 6.066 0 0 1-.415-.492 1.988 1.988 0 0 1-.94.31z"/>
+                </svg>
+            </div>
+            <h3>やさしい日本語</h3>
+            <p>わかりやすい日本語で<br>生活情報を提供</p>
+        </div>
+        <div class="tile" onclick="showModal('各種施策など')">
+            <div class="tile-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                    <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+                </svg>
+            </div>
+            <h3>支援制度</h3>
+            <p>外国人住民向けの<br>行政サービスと支援制度</p>
+        </div>
+    </div>
+
+    <!-- モーダルウィンドウ -->
+    <div class="modal-overlay" id="modalOverlay"></div>
+    <div id="categoryModal" class="modal">
+        <span class="close-modal" onclick="closeModal()">×</span>
+        <h2 id="modalTitle"></h2>
+        <ul class="category-list" id="categoryList"></ul>
+    </div>
+
+    <script>
+        // カテゴリーデータ（CSVから生成）
+        const categoryData = {
+            'カテゴリ別': {
+                '総合': ['公共サービス案内', '市民支援', '地域コミュニティ', 'インフラ情報', '防災と緊急連絡', '地域ボランティア情報', '福祉サービス', '行政手続きガイド', '生活支援', '環境対策'],
+                '入国・在留': ['ビザ申請ガイド', '在留資格更新', '家族帯同情報', '在留カード取得', '外国人労働サポート', '難民支援', '滞在延長手続き', '出入国管理', '移住支援', '観光滞在情報'],
+                '市区町村の手続': ['住民票取得', '転入・転出手続', '印鑑証明取得', '戸籍手続', 'マイナンバー利用', '住民税手続', '保険証更新', '選挙権の登録', '地域サービス', '福祉相談窓口'],
+                '雇用・労働': ['雇用保険ガイド', '職場環境', '有給休暇取得', '労働時間管理', '解雇と権利', '育児休業支援', 'ハラスメント対応', '年金と社会保険', '労災保険', '退職手続'],
+                '出産・子育て': ['妊娠中サポート', '母子健康管理', '児童手当', '保園情報', '育相談窓口', '乳幼児医療費助成', '母子手帳申請', '子育て支援制度', '小児科医の紹介', '親子教室'],
+                '教育': ['教育_小分類_1', '教育_小分類_2', '教育_小分類_3', '教育_小分類_4', '教育_小分類_5'],
+                '医療': ['医療_小分類_1', '医療_小分類_2', '医療_小分類_3', '医療_小分類_4', '医療_小分類_5'],
+                '年金・福祉': ['年金・福祉_小分類_1', '年金・福祉_小分類_2', '年金・福祉_小分類_3', '年金・福祉_小分類_4', '年金・福祉_小分類_5'],
+                '税金': ['税金_小分類_1', '税金_小分類_2', '税金_小分類_3', '税金_小分類_4', '税金_小分類_5'],
+                '交通': ['交通_小分類_1', '交通_小分類_2', '交通_小分類_3', '交通_小分類_4', '交通_小分類_5'],
+                '緊急・災害': ['緊急・災害_小分類_1', '緊急・災害_小分類_2', '緊急・災害_小分類_3', '緊急・災害_小分類_4', '緊急・災害_小分類_5'],
+                '住居': ['住居_小分類_1', '住居_小分類_2', '住居_小分類_3', '住居_小分類_4', '住居_小分類_5'],
+                '日常生活のルール': ['日常生活のルール_小分類_1', '日常生活のルール_小分類_2', '日常生活のルール_小分類_3', '日常生活のルール_小分類_4', '日常生活のルール_小分類_5']
+            },
+            'ガイドブック': {
+                '多言語版': ['多言語版_小分類_1', '多言語版_小分類_2', '多言語版_小分類_3', '多言語版_小分類_4', '多言語版_小分類_5'],
+                '日本語版': ['日本語版_小分類_1', '日本語版_小分類_2', '日本語版_小分類_3', '日本語版_小分類_4', '日本語版_小分類_5'],
+                'やさしい日本語版': ['やさしい日本語版_小分類_1', 'やさしい日本語版_小分類_2', 'やさしい日本語版_小分類_3', 'やさしい日本語版_小分類_4', 'やさしい日本語版_小分類_5'],
+                '政府広報オンライン': ['政府広報オンライン_小分類_1', '政府広報オンライン_小分類_2', '政府広報オンライン_小分類_3', '政府広報オンライン_小分類_4', '政府広報オンライン_小分類_5']
+            },
+            '特設ページ': {
+                '新型コロナ': ['新型コロナ_小分類_1', '新型コロナ_小分類_2', '新型コロナ_小分類_3', '新型コロナ_小分類_4', '新型コロナ_小分類_5'],
+                'マイナンバーカード': ['マイナンバーカード_小分類_1', 'マイナンバーカード_小分類_2', 'マイナンバーカード_小分類_3', 'マイナンバーカード_小分類_4', 'マイナンバーカード_小分類_5'],
+                'ウクライナ避難民': ['ウクライナ避難民_小分類_1', 'ウクライナ避難民_小分類_2', 'ウクライナ避難民_小分類_3', 'ウクライナ避難_小分類_4', 'クライナ避難民_小分類_5'],
+                '令和６年能登半島地震': ['令和６年能登半島地震_小分類_1', '令和６年能登半島地震_小分類_2', '令和６年能登半島地震_小分類_3', '令和６年能登半島地震_小分類_4', '令和６年能登半島地震_小分類_5']
+            },
+            'やさしい日本語': {
+                'ガイドライン': ['ガイドライン_小分類_1', 'ガイドライン_小分類_2', 'ガイドライン_小分類_3', 'ガイドライン_小分類_4', 'ガイドライン_小分類_5'],
+                '話し言葉のポイント': ['話し言葉のポイント_小分類_1', '話し言葉のポイント_小分類_2', '話し言葉のポイント_小分類_3', '話し言葉のポイント_小分類_4', '話し言葉のポイント_小分類_5'],
+                '研修のための手引': ['研修のための手引_小分類_1', '研修のための手引_小分類_2', '研修のための手引_小分類_3', '研修のための手引_小分類_4', '研修のための手引_小分類_5'],
+                '研修教材例': ['研修教材例_小分類_1', '研修教材例_小分類_2', '研修教材例_小分類_3', '研修教材例_小分類_4', '研修教材例_小分類_5']
+            },
+            '各種施策など': {
+                'オリエンテーション動画': ['オリエンテーション動画_小分類_1', 'オリエンテーション動画_小分類_2', 'オリエンテーション動画_小分類_3', 'オリエンテーション動画_小分類_4', 'オリエンテーション動画_小分類_5'],
+                '御意見箱': ['御意見箱_小分類_1', '御意見箱_小分類_2', '御意見箱_小分類_3', '御意見箱_小分類_4', '御意見箱_小分類_5'],
+                'ハーモニーアップ': ['ハーモニーアップ_小分類_1', 'ハーモニーアップ_小分類_2', 'ハーモニーアップ_小分類_3', 'ハーモニーアップ_小分類_4', 'ハーモニーアップ_小分類_5'],
+                'FRESC/フレスク': ['FRESC/フレスク_小分類_1', 'FRESC/フレスク_小分類_2', 'FRESC/フレスク_小分類_3', 'FRESC/フレスク_小分類_4', 'FRESC/フレスク_小分類_5'],
+                '特定技能総合支援サイト': ['特定技能総合支援サイト_小分類_1', '特定技能総合支援サイト_小分類_2', '特定技能総合支援サイト_小分類_3', '特定技能総合支援サイト_小分類_4', '特定技能総合支援サイト_小分類_5']
+            }
+        };
+
+        function showModal(category) {
+            const modal = document.getElementById('categoryModal');
+            const overlay = document.getElementById('modalOverlay');
+            const modalTitle = document.getElementById('modalTitle');
+            const categoryList = document.getElementById('categoryList');
+            
+            modalTitle.textContent = category;
+            categoryList.innerHTML = '';
+            
+            Object.keys(categoryData[category]).forEach(subCategory => {
+                const li = document.createElement('li');
+                li.className = 'category-item';
+                li.textContent = subCategory;
+                li.onclick = () => showSubCategories(category, subCategory);
+                categoryList.appendChild(li);
+            });
+            
+            modal.style.display = 'block';
+            overlay.style.display = 'block';
+            
+            requestAnimationFrame(() => {
+                modal.classList.add('show');
+                overlay.classList.add('show');
+            });
+        }
+
+        function showSubCategories(category, subCategory) {
+            const categoryList = document.getElementById('categoryList');
+            categoryList.innerHTML = '';
+            
+            const breadcrumb = document.createElement('div');
+            breadcrumb.className = 'breadcrumb';
+            breadcrumb.innerHTML = `<a href="#" onclick="showModal('${category}')">${category}</a> > ${subCategory}`;
+            categoryList.appendChild(breadcrumb);
+            
+            categoryData[category][subCategory].forEach(item => {
+                const li = document.createElement('li');
+                li.className = 'category-item sub-item';
+                li.textContent = item;
+                li.onclick = () => navigateToPage(category, subCategory, item);
+                categoryList.appendChild(li);
+            });
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('categoryModal');
+            const overlay = document.getElementById('modalOverlay');
+            
+            modal.classList.remove('show');
+            overlay.classList.remove('show');
+            
+            setTimeout(() => {
+                modal.style.display = 'none';
+                overlay.style.display = 'none';
+            }, 300);
+        }
+
+        function navigateToPage(category, subCategory, item) {
+            alert(`${category} > ${subCategory} > ${item} のページに移動します`);
+        }
+
+        // 検索機能
+        document.querySelector('.search-box').addEventListener('keydown', function(e) {
+            // Enterキーが押された場合（IME確定は除外）
+            if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) {
+                performSearch();
+            }
+        });
+
+        document.querySelector('.search-button').addEventListener('click', performSearch);
+
+        function performSearch() {
+            const searchTerm = document.querySelector('.search-box').value.toLowerCase();
+            if (searchTerm.length < 2) {
+                alert('検索キーワードは2文字以上入力してください。');
+                return;
+            }
+
+            const results = [];
+            Object.keys(categoryData).forEach(category => {
+                Object.keys(categoryData[category]).forEach(subCategory => {
+                    categoryData[category][subCategory].forEach(item => {
+                        if (item.toLowerCase().includes(searchTerm)) {
+                            results.push({
+                                category: category,
+                                subCategory: subCategory,
+                                item: item
+                            });
+                        }
+                    });
+                });
+            });
+
+            // 検索結果をモーダルで表示
+            const modal = document.getElementById('categoryModal');
+            const overlay = document.getElementById('modalOverlay');
+            const modalTitle = document.getElementById('modalTitle');
+            const categoryList = document.getElementById('categoryList');
+            
+            modalTitle.textContent = '検索結果';
+            categoryList.innerHTML = '';
+            
+            if (results.length === 0) {
+                categoryList.innerHTML = '<li class="category-item">検索結果が見つかりませんでした。</li>';
+            } else {
+                results.forEach(result => {
+                    const li = document.createElement('li');
+                    li.className = 'category-item search-result';
+                    li.innerHTML = `
+                        <small>${result.category} > ${result.subCategory}</small>
+                        ${result.item}
+                    `;
+                    li.onclick = () => navigateToPage(result.category, result.subCategory, result.item);
+                    categoryList.appendChild(li);
+                });
+            }
+            
+            modal.style.display = 'block';
+            overlay.style.display = 'block';
+            
+            requestAnimationFrame(() => {
+                modal.classList.add('show');
+                overlay.classList.add('show');
+            });
+        }
+
+        // バーレイクリックでモーダルを閉じる
+        document.getElementById('modalOverlay').addEventListener('click', closeModal);
+    </script>
+</body>
+</html>
