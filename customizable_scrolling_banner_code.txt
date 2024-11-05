@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customizable Horizontal Scrolling Banners</title>
+    <style>
+        /* バナー全体を表示するコンテナ */
+        .banner-container {
+            overflow: hidden;
+            width: 100%;          /* コンテナの幅は画面いっぱいに調整 */
+            height: 200px;        /* バナー1つ分の高さ - 必要に応じて変更可能 */
+            position: relative;
+            background-color: #333;
+        }
+
+        /* バナートラック - 横方向に配置 */
+        .banner-track {
+            display: flex;
+            width: calc(100% * 3); /* 3つのバナー分の幅 */
+            animation: scroll 30s linear infinite; /* スクロール速度 - 必要に応じて変更可能 */
+        }
+
+        /* 各バナー画像のスタイル */
+        .banner {
+            width: 100%;           /* 各バナーがコンテナ幅に合わせて表示される */
+            height: 100%;
+            object-fit: cover;     /* 画像をバナーサイズに合わせてスムーズに表示 */
+        }
+
+        /* 横スクロールアニメーション */
+        @keyframes scroll {
+            0% { transform: translateX(0); }
+            33.33% { transform: translateX(-100%); } /* 1つ目から2つ目にスクロール */
+            66.66% { transform: translateX(-200%); } /* 2つ目から3つ目にスクロール */
+            100% { transform: translateX(0); }       /* 最後から最初にループ */
+        }
+    </style>
+</head>
+<body>
+    <div class="banner-container">
+        <div class="banner-track">
+            <!-- バナー画像を表示。画像パスを変更して使用 -->
+            <img src="path/to/your-image1.jpg" alt="Banner 1" class="banner">
+            <img src="path/to/your-image2.jpg" alt="Banner 2" class="banner">
+            <img src="path/to/your-image3.jpg" alt="Banner 3" class="banner">
+        </div>
+    </div>
+</body>
+</html>
