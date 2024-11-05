@@ -1,0 +1,35 @@
+/* バナーコンテナ */
+.banner-container {
+    overflow: hidden;
+    width: 100%;
+    height: 50px;
+    position: relative;
+    background-color: #333;
+}
+
+/* バナートラック */
+.banner-track {
+    display: flex;
+    width: 300%; /* 各バナーが100%幅の場合 */
+    animation: scroll 9s linear infinite;
+}
+
+/* 各バナーのスタイル */
+.banner {
+    width: 100%;
+    flex: 0 0 100%; /* 各バナーをコンテナ幅に合わせる */
+    text-align: center;
+    font-size: 1.5em;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* スクロールアニメーション */
+@keyframes scroll {
+    0% { transform: translateX(0); }
+    33.33% { transform: translateX(-100%); }
+    66.66% { transform: translateX(-200%); }
+    100% { transform: translateX(0); }
+}
