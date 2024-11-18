@@ -1,0 +1,43 @@
+
+Sub CountRevisedCharacters()
+    On Error GoTo ErrorHandler
+    Dim revision As Revision
+    Dim addedChars As Long
+    Dim deletedChars As Long
+    Dim otherChars As Long
+    
+    addedChars = 0
+    deletedChars = 0
+    otherChars = 0
+    
+    ' ActiveDocumentが存在するか確認
+    If ActiveDocument Is Nothing Then
+        MsgBox "有効なドキュメントが開かれていません。", vbExclamation
+        Exit Sub
+    End If
+    
+    ' ドキュメントに修正があるか確認
+    If ActiveDocument.Revisions.Count = 0 Then
+        MsgBox "このドキュメントには修正がありません。", vbExclamation
+        Exit Sub
+    End If
+    
+    ' 全ての修正をチェック
+    For Each revision In ActiveDocument.Revisions
+        Select Case revision.Type
+            Case wdRevisionInsert
+                addedChars = addedChars + Len(revision.Range.Text)
+            Case wdRevisionDelete
+                deletedChars = deletedChars + Len(revision.Range.Text)
+            Case Else
+                otherChars = otherChars + Len(revision.Range.Text)
+                MsgBox "その他のリビジョンタイプ: " & revision.Type
+        End Select
+    Next revision
+    
+    MsgBox "追加された文字数: " & addedChars & vbCrLf & "削除された文字数: " & deletedChars & vbCrLf & "その他のリビジョン文字数: " & otherChars
+    Exit Sub
+
+ErrorHandler:
+    MsgBox "エラーが発生しました: " & Err.Description, vbCritical
+End Sub
