@@ -1,0 +1,68 @@
+# 変換元フォルダと保存先フォルダのパスを指定
+
+$sourceFolder = “C:\変換元”
+$destFolder = “C:\変換後”
+
+# 保存先フォルダが存在しない場合は作成
+
+if (!(Test-Path $destFolder)) {
+New-Item -ItemType Directory -Path $destFolder
+}
+
+try {
+# 一太郎アプリケーションのCOMオブジェクトを作成
+# 正しいProgIDは “JXW.Application” です
+$jt = New-Object -ComObject “JXW.Application”
+
+```
+# 一太郎を表示（デバッグ用。非表示にする場合は$falseに）
+$jt.Visible = $true
+
+# フォルダ内のすべての.jtdファイルを取得
+Get-ChildItem -Path $sourceFolder -Filter "*.jtd" | ForEach-Object {
+    $srcFile = $_.FullName
+    $baseName = $_.BaseName
+    $destDocx = Join-Path $destFolder "$baseName.docx"
+    
+    Write-Host "変換中: $srcFile -> $destDocx"
+    
+    try {
+        # 文書を開く
+        $doc = $jt.Documents.Open($srcFile)
+        
+        # Word形式で保存
+        # SaveAsメソッドの第2引数は形式を指定する数値
+        # 12 = Word 2007-2019形式 (.docx)
+        $doc.SaveAs($destDocx, 12)
+        
+        # 文書を閉じる
+        $doc.Close()
+        
+        Write-Host "変換完了: $baseName.docx"
+    }
+    catch {
+        Write-Host "エラー: $srcFile の変換に失敗しました - $_"
+    }
+}
+```
+
+}
+catch {
+Write-Host “一太郎COMオブジェクトの作成に失敗しました: $_”
+}
+finally {
+# 一太郎を終了
+if ($jt) {
+$jt.Quit()
+[System.Runtime.InteropServices.Marshal]::ReleaseComObject($jt) | Out-Null
+}
+
+```
+# ガベージコレクションを実行
+[System.GC]::Collect()
+[System.GC]::WaitForPendingFinalizers()
+```
+
+}
+
+Write-Host “すべての変換処理が完了しました。”
