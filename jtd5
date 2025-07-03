@@ -1,0 +1,573 @@
+Option Explicit
+
+Sub ConvertJTDtoPDF()
+Dim sourcePath As String
+Dim destPath As String
+Dim jtApp As Object
+Dim jtDoc As Object
+Dim fso As Object
+Dim folder As Object
+Dim file As Object
+Dim fileName As String
+Dim pdfName As String
+
+```
+' フォルダパスの設定
+sourcePath = "C:\変換元"
+destPath = "C:\変換後"
+
+' FileSystemObjectの作成
+Set fso = CreateObject("Scripting.FileSystemObject")
+
+' 保存先フォルダが存在しない場合は作成
+If Not fso.FolderExists(destPath) Then
+    fso.CreateFolder destPath
+End If
+
+On Error GoTo ErrorHandler
+
+' 一太郎アプリケーションの起動
+Set jtApp = CreateObject("JXW.Application")
+jtApp.Visible = True ' デバッグ用に表示（非表示にする場合はFalse）
+
+' ソースフォルダを取得
+Set folder = fso.GetFolder(sourcePath)
+
+' フォルダ内のファイルをループ処理
+For Each file In folder.Files
+    If LCase(fso.GetExtensionName(file.Name)) = "jtd" Then
+        fileName = file.Path
+        pdfName = destPath & "\" & fso.GetBaseName(file.Name) & ".pdf"
+        
+        Debug.Print "変換中: " & fileName
+        
+        ' 一太郎でファイルを開く
+        Set jtDoc = jtApp.Documents.Open(fileName)
+        
+        ' PDFとして保存（方法1: ExportAsFixedFormat）
+        On Error Resume Next
+        jtDoc.ExportAsFixedFormat OutputFileName:=pdfName, ExportFormat:=17
+        
+        ' 方法1が失敗した場合、方法2を試す
+        If Err.Number <> 0 Then
+            Err.Clear
+            ' 方法2: SaveAs2 メソッド
+            jtDoc.SaveAs2 pdfName, FileFormat:=17  ' 17または18がPDF形式
+        End If
+        
+        ' 方法2も失敗した場合、方法3を試す
+        If Err.Number <> 0 Then
+            Err.Clear
+            ' 方法3: 通常のSaveAsメソッド
+            jtDoc.SaveAs pdfName, 17
+        End If
+        
+        On Error GoTo ErrorHandler
+        
+        ' ドキュメントを閉じる
+        jtDoc.Close SaveChanges:=False
+        
+        Debug.Print "変換完了: " & pdfName
+    End If
+Next file
+
+' 一太郎を終了
+jtApp.Quit
+
+MsgBox "すべてのJTDファイルをPDFに変換しました。", vbInformation
+
+GoTo Cleanup
+```
+
+ErrorHandler:
+MsgBox “エラーが発生しました: “ & Err.Description, vbExclamation
+
+Cleanup:
+’ オブジェクトの解放
+Set jtDoc = Nothing
+Set jtApp = Nothing
+Set file = Nothing
+Set folder = Nothing
+Set fso = Nothing
+End Sub
+
+’ Word経由でPDFに変換する方法
+Sub ConvertJTDtoPDF_ViaWord()
+Dim sourcePath As String
+Dim destPath As String
+Dim jtApp As Object
+Dim jtDoc As Object
+Dim wordApp As Object
+Dim wordDoc As Object
+Dim fso As Object
+Dim folder As Object
+Dim file As Object
+Dim fileName As String
+Dim tempDocx As String
+Dim pdfName As String
+
+```
+sourcePath = "C:\変換元"
+destPath = "C:\変換後"
+
+Set fso = CreateObject("Scripting.FileSystemObject")
+
+If Not fso.FolderExists(destPath) Then
+    fso.CreateFolder destPath
+End If
+
+On Error GoTo ErrorHandler
+
+' 一太郎とWordを起動
+Set jtApp = CreateObject("JXW.Application")
+Set wordApp = CreateObject("Word.Application")
+jtApp.Visible = False
+wordApp.Visible = False
+
+Set folder = fso.GetFolder(sourcePath)
+
+For Each file In folder.Files
+    If LCase(fso.GetExtensionName(file.Name)) = "jtd" Then
+        fileName = file.Path
+        tempDocx = destPath & "\" & fso.GetBaseName(file.Name) & "_temp.docx"
+        pdfName = destPath & "\" & fso.GetBaseName(file.Name) & ".pdf"
+        
+        ' 一太郎でファイルを開く
+        Set jtDoc = jtApp.Documents.Open(fileName)
+        
+        ' Word形式で一時保存（形式番号は12または16）
+        On Error Resume Next
+        jtDoc.SaveAs tempDocx, 12  ' Word 2007-2019形式
+        
+        If Err.Number <> 0 Then
+            Err.Clear
+            ' 別の方法：クリップボード経由
+            jtDoc.Content.Copy
+            Set wordDoc = wordApp.Documents.Add
+            wordDoc.Content.Paste
+            wordDoc.SaveAs2 tempDocx
+        Else
+            ' Wordで開く
+            Set wordDoc = wordApp.Documents.Open(tempDocx)
+        End If
+        On Error GoTo ErrorHandler
+        
+        ' WordからPDFとして保存
+        wordDoc.SaveAs2 pdfName, FileFormat:=17  ' wdFormatPDF = 17
+        
+        ' ドキュメントを閉じる
+        wordDoc.Close SaveChanges:=False
+        jtDoc.Close SaveChanges:=False
+        
+        ' 一時ファイルを削除
+        If fso.FileExists(tempDocx) Then
+            fso.DeleteFile tempDocx
+        End If
+        
+        DoEvents
+    End If
+Next file
+
+' アプリケーションを終了
+jtApp.Quit
+wordApp.Quit
+
+MsgBox "変換が完了しました。", vbInformation
+
+GoTo Cleanup
+```
+
+ErrorHandler:
+MsgBox “エラーが発生しました: “ & Err.Description, vbExclamation
+
+Cleanup:
+Set wordDoc = Nothing
+Set jtDoc = Nothing
+Set wordApp = Nothing
+Set jtApp = Nothing
+Set file = Nothing
+Set folder = Nothing
+Set fso = Nothing
+End Sub
+
+’ シンプル版：SendKeysを使用した確実な方法
+Sub ConvertJTDtoPDF_SendKeys()
+Dim sourcePath As String
+Dim destPath As String
+Dim jtApp As Object
+Dim jtDoc As Object
+Dim fso As Object
+Dim folder As Object
+Dim file As Object
+Dim fileName As String
+Dim pdfName As String
+
+```
+sourcePath = "C:\変換元"
+destPath = "C:\変換後"
+
+Set fso = CreateObject("Scripting.FileSystemObject")
+
+If Not fso.FolderExists(destPath) Then
+    fso.CreateFolder destPath
+End If
+
+On Error GoTo ErrorHandler
+
+' 一太郎を起動（必ず表示する）
+Set jtApp = CreateObject("JXW.Application")
+jtApp.Visible = True
+
+Set folder = fso.GetFolder(sourcePath)
+
+For Each file In folder.Files
+    If LCase(fso.GetExtensionName(file.Name)) = "jtd" Then
+        fileName = file.Path
+        pdfName = destPath & "\" & fso.GetBaseName(file.Name) & ".pdf"
+        
+        ' ファイルを開く
+        Set jtDoc = jtApp.Documents.Open(fileName)
+        
+        ' アプリケーションをアクティブにする
+        AppActivate jtApp.Caption
+        
+        ' 少し待つ
+        Application.Wait Now + TimeValue("0:00:01")
+        
+        ' ファイル → 名前を付けて保存 (Alt+F, A)
+        SendKeys "%FA", True
+        Application.Wait Now + TimeValue("0:00:01")
+        
+        ' ファイル名を入力
+        SendKeys pdfName, True
+        Application.Wait Now + TimeValue("0:00:01")
+        
+        ' ファイルの種類をPDFに変更（Tab→↓でPDFを選択）
+        SendKeys "{TAB}", True
+        Application.Wait Now + TimeValue("0:00:01")
+        
+        ' PDFを選択（一太郎のバージョンによって位置が異なる場合があります）
+        SendKeys "PDF", True  ' または "{DOWN}"を数回
+        Application.Wait Now + TimeValue("0:00:01")
+        
+        ' 保存ボタンをクリック
+        SendKeys "{ENTER}", True
+        Application.Wait Now + TimeValue("0:00:02")
+        
+        ' ドキュメントを閉じる
+        jtDoc.Close SaveChanges:=False
+        
+        DoEvents
+    End If
+Next file
+
+jtApp.Quit
+MsgBox "変換が完了しました。", vbInformation
+
+GoTo Cleanup
+```
+
+ErrorHandler:
+MsgBox “エラーが発生しました: “ & Err.Description, vbExclamation
+
+Cleanup:
+Set jtDoc = Nothing
+Set jtApp = Nothing
+Set file = Nothing
+Set folder = Nothing
+Set fso = Nothing
+End Sub
+
+’ デバッグ版：どのPDF保存方法が動作するかテスト
+Sub TestJTDtoPDFMethods()
+Dim jtApp As Object
+Dim jtDoc As Object
+Dim testFile As String
+Dim pdfPath As String
+Dim methodSuccess(1 To 5) As Boolean
+Dim i As Integer
+
+```
+' テスト用のファイルパスを設定（最初の.jtdファイルを使用）
+testFile = "C:\変換元\テストファイル.jtd"  ' ここを実際のファイルパスに変更
+pdfPath = "C:\変換後\テスト"
+
+On Error Resume Next
+
+' 一太郎を起動
+Set jtApp = CreateObject("JXW.Application")
+jtApp.Visible = True
+
+' ファイルを開く
+Set jtDoc = jtApp.Documents.Open(testFile)
+
+If jtDoc Is Nothing Then
+    MsgBox "ファイルを開けませんでした。"
+    Exit Sub
+End If
+
+MsgBox "ファイルは正常に開きました。PDF保存方法をテストします。"
+
+' 方法1: ExportAsFixedFormat
+Err.Clear
+jtDoc.ExportAsFixedFormat OutputFileName:=pdfPath & "_method1.pdf", ExportFormat:=17
+methodSuccess(1) = (Err.Number = 0)
+
+' 方法2: SaveAs2 with FileFormat
+Err.Clear
+jtDoc.SaveAs2 pdfPath & "_method2.pdf", FileFormat:=17
+methodSuccess(2) = (Err.Number = 0)
+
+' 方法3: SaveAs with format number
+Err.Clear
+jtDoc.SaveAs pdfPath & "_method3.pdf", 17
+methodSuccess(3) = (Err.Number = 0)
+
+' 方法4: プリンタを使用した印刷
+Err.Clear
+Dim originalPrinter As String
+originalPrinter = jtApp.ActivePrinter
+
+' PDFプリンタに変更
+jtApp.ActivePrinter = "Microsoft Print to PDF"
+If Err.Number = 0 Then
+    jtDoc.PrintOut Background:=False, PrintToFile:=True, OutputFileName:=pdfPath & "_method4.pdf"
+    methodSuccess(4) = (Err.Number = 0)
+    jtApp.ActivePrinter = originalPrinter
+End If
+
+' 方法5: 別名で保存ダイアログを使用
+Err.Clear
+Application.DisplayAlerts = False
+jtDoc.SaveAs pdfPath & "_method5.pdf", FileFormat:="PDF"
+Application.DisplayAlerts = True
+methodSuccess(5) = (Err.Number = 0)
+
+' 結果を表示
+Dim result As String
+result = "PDF保存方法のテスト結果：" & vbCrLf & vbCrLf
+result = result & "方法1 (ExportAsFixedFormat): " & IIf(methodSuccess(1), "成功", "失敗") & vbCrLf
+result = result & "方法2 (SaveAs2): " & IIf(methodSuccess(2), "成功", "失敗") & vbCrLf
+result = result & "方法3 (SaveAs): " & IIf(methodSuccess(3), "成功", "失敗") & vbCrLf
+result = result & "方法4 (PrintOut): " & IIf(methodSuccess(4), "成功", "失敗") & vbCrLf
+result = result & "方法5 (SaveAs with 'PDF'): " & IIf(methodSuccess(5), "成功", "失敗")
+
+MsgBox result
+
+' 後片付け
+jtDoc.Close SaveChanges:=False
+jtApp.Quit
+Set jtDoc = Nothing
+Set jtApp = Nothing
+```
+
+End Sub
+
+’ 代替案：Windows10のMicrosoft Print to PDFを使用する方法
+Sub ConvertJTDtoPDF_Alternative()
+Dim sourcePath As String
+Dim destPath As String
+Dim jtApp As Object
+Dim jtDoc As Object
+Dim fso As Object
+Dim folder As Object
+Dim file As Object
+Dim fileName As String
+Dim pdfName As String
+Dim originalPrinter As String
+
+```
+' フォルダパスの設定
+sourcePath = "C:\変換元"
+destPath = "C:\変換後"
+
+' FileSystemObjectの作成
+Set fso = CreateObject("Scripting.FileSystemObject")
+
+' 保存先フォルダが存在しない場合は作成
+If Not fso.FolderExists(destPath) Then
+    fso.CreateFolder destPath
+End If
+
+On Error GoTo ErrorHandler
+
+' 一太郎アプリケーションの起動
+Set jtApp = CreateObject("JXW.Application")
+jtApp.Visible = False ' バックグラウンドで実行
+
+' 現在のプリンタを保存
+originalPrinter = jtApp.ActivePrinter
+
+' Microsoft Print to PDFに変更
+jtApp.ActivePrinter = "Microsoft Print to PDF"
+
+' ソースフォルダを取得
+Set folder = fso.GetFolder(sourcePath)
+
+' フォルダ内のファイルをループ処理
+For Each file In folder.Files
+    If LCase(fso.GetExtensionName(file.Name)) = "jtd" Then
+        fileName = file.Path
+        pdfName = destPath & "\" & fso.GetBaseName(file.Name) & ".pdf"
+        
+        Application.StatusBar = "変換中: " & file.Name
+        
+        ' 一太郎でファイルを開く
+        Set jtDoc = jtApp.Documents.Open(fileName)
+        
+        ' PDFとして印刷
+        jtDoc.PrintOut Background:=False, PrintToFile:=True, OutputFileName:=pdfName
+        
+        ' ドキュメントを閉じる
+        jtDoc.Close SaveChanges:=False
+        
+        DoEvents ' Excelの応答性を保つ
+    End If
+Next file
+
+' 元のプリンタに戻す
+jtApp.ActivePrinter = originalPrinter
+
+' 一太郎を終了
+jtApp.Quit
+
+Application.StatusBar = ""
+MsgBox "すべてのJTDファイルをPDFに変換しました。", vbInformation
+
+GoTo Cleanup
+```
+
+ErrorHandler:
+MsgBox “エラーが発生しました: “ & Err.Description & vbCrLf & _
+“ファイル: “ & fileName, vbExclamation
+
+Cleanup:
+’ オブジェクトの解放
+Set jtDoc = Nothing
+Set jtApp = Nothing
+Set file = Nothing
+Set folder = Nothing
+Set fso = Nothing
+Application.StatusBar = “”
+End Sub
+
+’ より詳細なエラーハンドリングとログ出力を含むバージョン
+Sub ConvertJTDtoPDF_WithLogging()
+Dim sourcePath As String
+Dim destPath As String
+Dim jtApp As Object
+Dim jtDoc As Object
+Dim fso As Object
+Dim folder As Object
+Dim file As Object
+Dim fileName As String
+Dim pdfName As String
+Dim logFile As String
+Dim logNum As Integer
+Dim successCount As Integer
+Dim errorCount As Integer
+
+```
+' フォルダパスの設定
+sourcePath = "C:\変換元"
+destPath = "C:\変換後"
+logFile = destPath & "\変換ログ_" & Format(Now, "yyyymmdd_hhmmss") & ".txt"
+
+' FileSystemObjectの作成
+Set fso = CreateObject("Scripting.FileSystemObject")
+
+' 保存先フォルダが存在しない場合は作成
+If Not fso.FolderExists(destPath) Then
+    fso.CreateFolder destPath
+End If
+
+' ログファイルを開く
+logNum = FreeFile
+Open logFile For Output As #logNum
+Print #logNum, "一太郎→PDF変換ログ"
+Print #logNum, "開始時刻: " & Now
+Print #logNum, "===================="
+
+On Error Resume Next
+
+' 一太郎アプリケーションの起動
+Set jtApp = CreateObject("JXW.Application")
+If Err.Number <> 0 Then
+    Print #logNum, "エラー: 一太郎の起動に失敗しました - " & Err.Description
+    Close #logNum
+    MsgBox "一太郎の起動に失敗しました。", vbCritical
+    Exit Sub
+End If
+
+jtApp.Visible = False
+
+' ソースフォルダを取得
+Set folder = fso.GetFolder(sourcePath)
+
+successCount = 0
+errorCount = 0
+
+' フォルダ内のファイルをループ処理
+For Each file In folder.Files
+    If LCase(fso.GetExtensionName(file.Name)) = "jtd" Then
+        fileName = file.Path
+        pdfName = destPath & "\" & fso.GetBaseName(file.Name) & ".pdf"
+        
+        Application.StatusBar = "変換中: " & file.Name & " (" & successCount + errorCount + 1 & "個目)"
+        
+        ' エラーをクリア
+        Err.Clear
+        
+        ' 一太郎でファイルを開く
+        Set jtDoc = jtApp.Documents.Open(fileName)
+        
+        If Err.Number = 0 Then
+            ' PDFとして保存
+            jtDoc.SaveAs pdfName, FileFormat:=18 ' 18 = PDF形式
+            
+            If Err.Number = 0 Then
+                Print #logNum, "成功: " & file.Name & " → " & fso.GetBaseName(file.Name) & ".pdf"
+                successCount = successCount + 1
+            Else
+                Print #logNum, "エラー: " & file.Name & " - PDF保存失敗: " & Err.Description
+                errorCount = errorCount + 1
+            End If
+            
+            ' ドキュメントを閉じる
+            jtDoc.Close SaveChanges:=False
+        Else
+            Print #logNum, "エラー: " & file.Name & " - ファイルを開けません: " & Err.Description
+            errorCount = errorCount + 1
+        End If
+        
+        DoEvents
+    End If
+Next file
+
+' 一太郎を終了
+jtApp.Quit
+
+' ログの終了処理
+Print #logNum, "===================="
+Print #logNum, "終了時刻: " & Now
+Print #logNum, "成功: " & successCount & "件"
+Print #logNum, "エラー: " & errorCount & "件"
+Close #logNum
+
+' オブジェクトの解放
+Set jtDoc = Nothing
+Set jtApp = Nothing
+Set file = Nothing
+Set folder = Nothing
+Set fso = Nothing
+
+Application.StatusBar = ""
+
+' 結果の表示
+MsgBox "変換が完了しました。" & vbCrLf & _
+       "成功: " & successCount & "件" & vbCrLf & _
+       "エラー: " & errorCount & "件" & vbCrLf & vbCrLf & _
+       "詳細はログファイルを確認してください: " & vbCrLf & logFile, vbInformation
+```
+
+End Sub
